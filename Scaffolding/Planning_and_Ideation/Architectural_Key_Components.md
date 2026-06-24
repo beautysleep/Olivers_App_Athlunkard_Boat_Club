@@ -17,7 +17,7 @@ repository.
             └───────────┬──────────────┘
                         │  HTTPS
             ┌───────────▼──────────────┐
-            │   Backend API             │   Cloud Run (Node or Python)
+            │   Backend API             │   Cloud Run (Python)
             │   auth, sessions,         │
             │   commitments, decisions  │
             └───────┬───────────┬───────┘
@@ -51,7 +51,7 @@ repository.
 
 ### Backend API — Cloud Run
 
-- Deployed as container(s) on **Cloud Run**, written in **Node or Python**.
+- Deployed as container(s) on **Cloud Run**, written in **Python**.
 - Responsibilities:
   - User authentication and identity.
   - Session lifecycle: proposal → commitments → confirmation → change/cancel.
@@ -124,7 +124,7 @@ introduced — it reuses the flow already defined.
 
 | Service | Refresh rate | Reason |
 | --- | --- | --- |
-| Dam release schedule | Once daily | Source data only updates daily |
+| Parteen / Ardnacrusha PDFs | Once daily | ESB PDFs only update daily |
 | Sunrise / sunset | Daily (fetch next ~30 days) | Highly stable |
 | Tide times / heights | Periodic (stable, far ahead) | Predictable; supports planning |
 | Wind | Frequent; not for sessions >7 days out | Forecast inaccurate beyond ~7 days |

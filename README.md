@@ -48,7 +48,7 @@ useful rather than something sprawling and unfinished:
 | Concern | Choice |
 | --- | --- |
 | Mobile app (iOS + Android) | Flutter |
-| Backend services | Cloud Run (Node or Python) |
+| Backend services | Cloud Run (Python) |
 | Database | Firestore |
 | Push notifications | Firebase Cloud Messaging (FCM) |
 | Scheduled condition checks | Cloud Scheduler → Cloud Functions |

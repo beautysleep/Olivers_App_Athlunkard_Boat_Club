@@ -65,7 +65,7 @@ explicit decision):
 ## Tech stack
 
 - **Mobile:** Flutter (single codebase → iOS + Android).
-- **Backend:** Cloud Run (Node or Python).
+- **Backend:** Cloud Run (Python).
 - **Database:** Firestore.
 - **Notifications:** Firebase Cloud Messaging (FCM).
 - **Condition-check jobs:** Cloud Scheduler → Cloud Functions.
@@ -92,9 +92,13 @@ Four metrics: **wind speed, tide height, tide time, rainfall** (at the prospecti
 time, plus cumulative over 24h and 72h). Two **hard overrides** that beat
 everything else:
 
-1. **Upstream dam water release** — if the dam is releasing, no rowing. No API;
-   scrape the operator's daily Excel upload. **Verify the dam name** (assumed
-   *Inniscarra*) and the schedule URL before implementing.
+1. **Upstream water release** — if water is being released, no rowing. No API.
+   The deciding signal is **Parteen Weir** discharge (the last weir before the
+   club's launch point), published by ESB **Ardnacrusha** as daily **PDFs** (not
+   Excel) — primary: `01-Shannon-Hydro-Forecast.pdf` (prose ~5-day Parteen
+   forecast); secondary/corroborating: `07-Total-Ardnacrusha-Flow.pdf`
+   (< ~300 m³/s ≈ fine). Scrape + parse the PDF text. Linked from the ESB
+   hydrometric page.
 2. **Daylight** — must be light enough to row; sunrise/sunset bounds every window.
 
 Exact numeric thresholds are **TBD with the coaches** — keep them as tunable
