@@ -288,7 +288,111 @@ The constraints I can think of at the moment are:
 
 ## Assumptions
 
+The following are working assumptions, not settled facts.
+
+Product assumptions:
+
+- Members will value an early, simple rowing suitability signal enough to check the app or respond to notifications.
+- The most useful first feature is not a full calendar system, but an early-warning system for good rowing opportunities.
+- A green / amber / red / grey status will be understandable enough for members, provided the app also shows the reason behind the result.
+- Coaches and experienced members are willing to encode at least some of their judgement into rules, thresholds, or review workflows.
+- Coach judgement remains the authority. The app supports the decision; it does not make the final safety decision.
+- The club's rowing conditions can be represented well enough by a small number of factors at first: wind, rainfall, tide, daylight, river/dam release, coach availability, and athlete availability.
+- It is acceptable for the first version to be conservative and mark uncertain conditions as grey or amber rather than trying to force a confident answer.
+- The app's first operational value is reducing missed opportunities, not perfectly predicting every unsafe condition.
+
+User assumptions:
+
+- Most users will interact through a phone.
+- Coaches are likely to tolerate slightly more complexity than athletes if the workflow saves them coordination time.
+- Athletes should be able to respond to availability requests with minimal friction.
+- A small number of experienced users may act as administrators or condition reviewers.
+- Not every club member needs an account in the first version, but the app will need some reliable way to identify coaches and athletes for notifications and responses.
+- If notifications are too frequent or low-quality, users will ignore them quickly.
+
+Data assumptions:
+
+- Weather, tide, daylight, and rainfall data can be obtained from reliable enough sources for the club's location.
+- Ardnacrusha / river-flow data may be incomplete, delayed, or difficult to access programmatically.
+- Missing environmental data should be treated as a visible uncertainty, not silently treated as safe.
+- Thresholds for safe / caution / unsafe conditions will need tuning from club experience.
+- Historical condition assessments should be stored because they will help explain decisions, debug bad recommendations, and tune thresholds later.
+- BigQuery is acceptable as the first structured data store, even though it is not a traditional transactional application database.
+- Cloud Storage is useful for future uploaded files, but it may not be needed in the first rowing-safety version.
+
+Technical assumptions:
+
+- Google Cloud Run is a suitable first deployment target for the web application or API.
+- Scheduled checks can be run using GCP tooling, for example Cloud Scheduler triggering a Cloud Run endpoint or job.
+- If the app becomes more notification-heavy or mobile-app-like, Firebase may become useful, especially for authentication, push notifications, or app distribution.
+- The first implementation should avoid premature native-app complexity unless push notifications are proven to be essential from day one.
+- A progressive web app may be enough for the first version if notifications and mobile usability are acceptable.
+- The system should be built in small increments so that agent-generated code can be reviewed and corrected before too much depends on it.
+
 ## Risks / failure modes
+
+Safety and trust risks:
+
+- The app could create false confidence by showing conditions as suitable when important data is missing, stale, or wrong.
+- Members may treat the app's status as a safety guarantee rather than a decision-support signal.
+- A rule that works for normal conditions may fail during unusual river, wind, tide, rainfall, or visibility conditions.
+- The app may miss a local condition that experienced members would notice, such as debris, poor visibility, unusual currents, regatta traffic, or temporary hazards.
+- If the app gives bad recommendations early, coaches may stop trusting it even after it improves.
+
+Data risks:
+
+- External APIs may change pricing, rate limits, terms, field names, or availability.
+- Tide or weather data may be accurate in general but not precise enough for the specific rowing stretch.
+- Ardnacrusha data may not have a stable source, may be published inconsistently, or may be legally/technically unsuitable for scraping.
+- Forecast data can change materially between the time a session is suggested and the actual rowing time.
+- Data freshness may be hard to communicate clearly to users.
+- Stored historical data may be incomplete if scheduled jobs fail silently.
+
+Workflow risks:
+
+- The app may notify coaches too often, creating alert fatigue.
+- The app may notify athletes before a coach is genuinely available, creating confusion.
+- Duplicate or near-duplicate session opportunities may appear if the matching logic is too naive.
+- A coach may accept and later cancel, requiring clear downstream notifications.
+- Enough athletes may accept initially but withdraw later, leaving a confirmed session under-subscribed.
+- The app may become a second calendar that conflicts with WhatsApp, existing club calendars, or informal arrangements.
+- Responsibility may become ambiguous: people may assume "the app checked" when no human has reviewed the situation.
+
+Product risks:
+
+- The first version may become too broad if it tries to handle conditions, scheduling, availability, notifications, accounts, training plans, and files at once.
+- A downloadable/native app may slow delivery if the core uncertainty is actually the condition-assessment workflow.
+- If the app requires too much setup from members, adoption may be weak.
+- If the app is only useful during certain seasons or weather patterns, feedback loops may be slow.
+- Coaches may have different thresholds for safe conditions, making one shared rule set politically or operationally difficult.
+
+Technical risks:
+
+- BigQuery may be awkward for highly transactional workflows such as frequent availability updates, session state changes, and user interactions.
+- Cloud Run services are stateless, so scheduled jobs, retries, and idempotency need deliberate design.
+- Notification delivery may become more complex than the condition calculation.
+- Authentication and permissions may take more work than expected, especially if coaches, athletes, admins, and guests need different access.
+- Scraping external sites may introduce brittle code and maintenance work.
+- Agent-generated code may accumulate complexity if tasks are not small, reviewed, and backed by tests.
+- Poorly defined data models may be expensive to unwind once notifications and historical logs depend on them.
+
+Governance and delivery risks:
+
+- If GitHub issues do not include acceptance criteria, agents may implement plausible but wrong behaviour.
+- If pull requests are too large, mobile review becomes unsafe.
+- If tests are added late, refactoring will become slower and riskier.
+- If deployment is automated before the app has basic safety checks, mistakes may reach users too easily.
+
+Possible mitigations:
+
+- Use grey for insufficient data and show exactly which data is missing.
+- Show the underlying reasons for every green / amber / red result.
+- Store the input data and rule version used for each condition assessment.
+- Keep the first version narrow: detect opportunities, request coach availability, request athlete availability, confirm or cancel sessions.
+- Make every notification idempotent so repeated checks do not spam users.
+- Require human confirmation before a suggested opportunity becomes a confirmed rowing session.
+- Add basic monitoring for failed scheduled checks and stale data.
+- Use small GitHub issues with explicit acceptance criteria and risk labels.
 
 ## Open questions
 
