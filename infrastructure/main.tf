@@ -13,6 +13,14 @@ terraform {
       source  = "hashicorp/archive"
       version = ">= 2.4"
     }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = ">= 5.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = ">= 2.4"
+    }
   }
 
   # Remote state lives in a GCS bucket (bootstrapped once via gcloud — see the
@@ -25,6 +33,12 @@ terraform {
 }
 
 provider "google" {
+  project = var.project_id
+  region  = var.region
+}
+
+# Firebase resources (project/app registration) live in the google-beta provider.
+provider "google-beta" {
   project = var.project_id
   region  = var.region
 }
@@ -42,6 +56,8 @@ locals {
     "artifactregistry.googleapis.com",
     "cloudscheduler.googleapis.com",
     "eventarc.googleapis.com",
+    "firebase.googleapis.com",
+    "firebaserules.googleapis.com",
   ]
 }
 
