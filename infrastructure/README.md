@@ -22,8 +22,30 @@ cloud_functions.tf      The condition-collection jobs
 firebase_messaging.tf   Push-notification setup
 ```
 
-## Not written yet
+Files are added as each piece of the system is built, so the infrastructure
+grows alongside the code it provisions rather than being guessed at up front.
 
-No `.tf` files exist yet. They are added as each piece of the system is built, so
-the infrastructure grows alongside the code it provisions rather than being
-guessed at in full up front.
+## Remote state
+
+Terraform state lives in a GCS bucket (`farnese-atlas-tfstate`, europe-west1,
+versioned) — see the `backend "gcs"` block in `main.tf`. That bucket is the one
+piece that can't be Terraform-managed from the start (Terraform can't keep its
+own state in a bucket that doesn't exist yet), so it is **bootstrapped once**
+with the CLI:
+
+```sh
+gcloud services enable storage.googleapis.com --project farnese-atlas
+gcloud storage buckets create gs://farnese-atlas-tfstate \
+  --project=farnese-atlas --location=europe-west1 \
+  --uniform-bucket-level-access --public-access-prevention
+gcloud storage buckets update gs://farnese-atlas-tfstate --versioning
+```
+
+Then `terraform init` picks up the backend. State is never committed (gitignored).
+
+## What's provisioned so far
+
+- APIs enabled: `firestore.googleapis.com`, `secretmanager.googleapis.com`.
+- Firestore database (Native mode) in `europe-west1`.
+- Secret Manager secret `worldtides-api-key` (value loaded out-of-band via
+  `gcloud`, never in Terraform).

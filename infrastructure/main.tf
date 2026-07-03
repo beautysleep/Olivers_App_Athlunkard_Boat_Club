@@ -10,6 +10,14 @@ terraform {
       version = ">= 5.0"
     }
   }
+
+  # Remote state lives in a GCS bucket (bootstrapped once via gcloud — see the
+  # infrastructure README). A backend block can't reference variables, so the
+  # bucket name is literal. The bucket name isn't a secret.
+  backend "gcs" {
+    bucket = "farnese-atlas-tfstate"
+    prefix = "infrastructure"
+  }
 }
 
 provider "google" {
