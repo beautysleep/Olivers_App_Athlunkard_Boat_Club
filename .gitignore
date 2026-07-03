@@ -11,6 +11,16 @@ __pycache__/
 *.pyc
 .venv/
 
+# Terraform (keep .terraform.lock.hcl — it pins provider versions)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+tfplan*
+*.tfplan
+crash.log
+
 # Gradle files
 .gradle/
 build/
