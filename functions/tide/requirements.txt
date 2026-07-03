@@ -2,3 +2,8 @@ requests>=2.31,<3
 # Provides the IANA tz database so ZoneInfo("Europe/Dublin") works even in
 # minimal containers without system zoneinfo (e.g. Cloud Functions).
 tzdata>=2024.1
+# Firestore access from the Cloud Function — no stdlib equivalent; official
+# Google client (Apache-2.0). Approved addition.
+google-cloud-firestore>=2.16,<3
+# Note: functions-framework is NOT pinned here — the Cloud Functions Python
+# runtime provides it. Install it in a local venv only for local testing.
