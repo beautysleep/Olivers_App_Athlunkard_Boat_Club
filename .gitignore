@@ -1,4 +1,16 @@
 abc_venv
+
+# Secrets / local env (API keys, service-account JSON) — never commit
+.env
+*.env
+!.env.example
+service-account*.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
 # Gradle files
 .gradle/
 build/
