@@ -14,11 +14,18 @@ import '../models/session.dart';
 import '../models/user_profile.dart';
 import '../shared/formatting.dart';
 import 'club_repository.dart';
+import 'firestore_tide_repository.dart';
+import 'tide_windows.dart';
 
 class AppState extends ChangeNotifier {
-  AppState(this._repo);
+  AppState(this._repo, {FirestoreTideRepository? tideRepository})
+      : _tideRepo = tideRepository;
 
   final ClubRepository _repo;
+
+  /// Optional live-tide source (Firestore). Null in tests → mock only.
+  final FirestoreTideRepository? _tideRepo;
+  Map<String, List<LiveHighTide>> _liveHighTides = {};
 
   UserProfile? _currentUser;
   UserProfile? get currentUser => _currentUser;
@@ -45,6 +52,40 @@ class AppState extends ChangeNotifier {
   List<DayConditions> upcomingDays() => _repo.upcomingDays();
   Set<DateTime> unavailableDays() => _repo.unavailableDays();
   Session? sessionForDate(DateTime date) => _repo.sessionForDate(date);
+
+  // --- Live tide (Firestore) ----------------------------------------------
+  /// Load live tide predictions from Firestore. Failure-tolerant: on any error
+  /// (e.g. Firebase unavailable in tests) it keeps whatever data we already
+  /// have, so the app still works on mock data.
+  Future<void> loadLiveTides() async {
+    final repo = _tideRepo;
+    if (repo == null) return;
+    try {
+      _liveHighTides = await repo.loadHighTides();
+      notifyListeners();
+    } catch (_) {
+      // Firestore not available — fall back to mock silently.
+    }
+  }
+
+  /// Live high tides for [date] (all of them), or empty if none loaded.
+  List<LiveHighTide> liveHighTidesFor(DateTime date) =>
+      _liveHighTides[_dateKey(date)] ?? const [];
+
+  /// The offerable high-tide sessions for [day]: highs that fall in daylight and
+  /// are at/above the height threshold. A day can yield two. Returns null when
+  /// there's no live tide data for the day (so the UI falls back to mock).
+  /// Daylight uses the day's (currently mock) sunrise/sunset until a live
+  /// source exists.
+  List<LiveHighTide>? offerableHighTidesFor(DayConditions day) {
+    final highs = liveHighTidesFor(day.date);
+    if (highs.isEmpty) return null;
+    return offerableHighTides(highs, sunrise: day.sunrise, sunset: day.sunset);
+  }
+
+  String _dateKey(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
 
   /// Look up a single session by id (used by the detail screen so it always
   /// reflects the latest state after a commit/cancel).

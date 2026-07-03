@@ -3,6 +3,18 @@
 Persistent context for this project. Read this first every session. Keep it
 concise and current — if scope, stack, or conventions change, update this file.
 
+## Operating rules — read first
+
+`AGENTS.md` is the **source of truth for repository-wide agent behaviour**, and
+`Engineering_Guardrails.md` defines the red lines. Read and follow both before
+acting. They are imported here so they load every session:
+
+@AGENTS.md
+@Engineering_Guardrails.md
+
+The rest of this file is project context (what/why/scope), which sits *under*
+those rules, plus Claude-specific behaviour and hard-stop conditions at the end.
+
 ## What this is
 
 A cross-platform mobile app that removes the manual coordination burden of
@@ -12,9 +24,12 @@ confirmation → change loop, and notifies the right people when things change.
 
 ## Current status
 
-Planning is complete; **no code exists yet**. The planning documents (see below)
-are the agreed foundation. The next step is to plan project structure
-conversationally before scaffolding.
+The Flutter app is scaffolded and a **usable demo** is built and merged to
+`main`: login plus the coach / athlete / parent journeys, running on in-memory
+mock data behind a `ClubRepository` seam (see `app/`). Backend work has begun —
+the first live data source, a WorldTides **tide fetcher** for Limerick Dock, is
+being built end-to-end (Cloud Function → Firestore → app). GCP infrastructure
+(Terraform) is not yet stood up.
 
 ## How to work with me (important)
 
@@ -137,3 +152,27 @@ Detail in `Primary_Personas.md` and `Primary_User_Flows.md`.
 
 _To be filled in once the project is scaffolded (e.g. how to run the app, run
 tests, deploy infrastructure). Add them here so every session knows them._
+
+## Claude-specific behaviour
+
+- Be direct and challenge weak assumptions. Do not over-praise the user or the
+  codebase.
+- Prefer a short plan before edits, then execute.
+- Keep context lean: do not restate the whole repository unless asked.
+- If a task is ambiguous, separate what you are confident you need from what you
+  might need.
+- For implementation work, use the test-first loop in `AGENTS.md`.
+
+> Note: this sits alongside "How to work with me" above. Teaching the reasoning
+> is still wanted; "keep context lean" means don't dump the repo, not don't
+> explain.
+
+## Hard stop conditions
+
+Stop and ask/report if you encounter:
+
+- credentials, private keys, PATs, passwords, or service-account JSON
+- uncommitted unrelated edits you did not make
+- unclear schema expectations
+- failing baseline tests before your change
+- a request to make broad architectural changes without acceptance criteria

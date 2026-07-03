@@ -1,12 +1,16 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'features/authentication/login_screen.dart';
 import 'features/home/role_home.dart';
 import 'services/app_scope.dart';
 import 'services/app_state.dart';
+import 'services/firestore_tide_repository.dart';
 import 'services/mock_club_repository.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const AthlunkardBoatClubApp());
 }
 
@@ -18,9 +22,17 @@ class AthlunkardBoatClubApp extends StatefulWidget {
 }
 
 class _AthlunkardBoatClubAppState extends State<AthlunkardBoatClubApp> {
-  // One app-wide state, backed by the mock repository. Swap MockClubRepository
-  // for a real implementation later — nothing else here changes.
-  final AppState _appState = AppState(MockClubRepository());
+  // App-wide state on mock data, with live tide overlaid from Firestore.
+  final AppState _appState = AppState(
+    MockClubRepository(),
+    tideRepository: FirestoreTideRepository(),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _appState.loadLiveTides(); // async + failure-tolerant
+  }
 
   @override
   void dispose() {
