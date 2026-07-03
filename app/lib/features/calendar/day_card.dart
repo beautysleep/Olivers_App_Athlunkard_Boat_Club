@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../models/day_conditions.dart';
 import '../../models/session.dart';
 import '../../models/user_profile.dart';
+import '../../services/tide_windows.dart';
 import '../../shared/condition_style.dart';
 import '../../shared/formatting.dart';
 
@@ -20,10 +21,16 @@ class DayCard extends StatefulWidget {
     required this.onSendProposal,
     required this.onMarkUnavailable,
     required this.onOpenSession,
+    this.offerableHighTides,
   });
 
   final DayConditions day;
   final Session? session;
+
+  /// Offerable high-tide sessions from live data (in daylight and at/above the
+  /// height threshold). A day can have two. null = no live data (show mock);
+  /// an empty list = live data but no rowable window that day.
+  final List<LiveHighTide>? offerableHighTides;
   final bool unavailable;
   final UserRole role;
   final VoidCallback onSendProposal;
@@ -167,8 +174,7 @@ class _DayCardState extends State<DayCard> {
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
             ),
             const Divider(height: 12),
-            _metric(Icons.waves, 'High tide',
-                '${formatTime(day.highTide)} · ${day.highTideHeightMetres}m'),
+            ..._highTideRows(day),
             _metric(Icons.air, 'Wind', '${day.windKnots.round()} kn'),
             _metric(Icons.water_drop, 'Rain', '${day.rainfallMm} mm'),
             _metric(
@@ -245,14 +251,45 @@ class _DayCardState extends State<DayCard> {
     ];
   }
 
+  /// High-tide row(s): live offerable windows (one or two) when available,
+  /// otherwise the mock high tide. A day with two qualifying highs shows two.
+  List<Widget> _highTideRows(DayConditions day) {
+    final offer = widget.offerableHighTides;
+    if (offer == null) {
+      return [
+        _metric(Icons.waves, 'High tide',
+            '${formatTime(day.highTide)} · ${day.highTideHeightMetres}m'),
+      ];
+    }
+    if (offer.isEmpty) {
+      return [
+        _metric(Icons.waves, 'High tide',
+            'none in daylight ≥${kMinRowableHighTideMetres}m'),
+      ];
+    }
+    return [
+      for (var i = 0; i < offer.length; i++)
+        _metric(
+          Icons.waves,
+          offer.length > 1 ? 'High tide ${i + 1}' : 'High tide',
+          '${formatTime(offer[i].time)} · '
+              '${offer[i].heightMetres.toStringAsFixed(1)}m',
+          live: true,
+        ),
+    ];
+  }
+
   Widget _metric(IconData icon, String label, String value,
-      {bool danger = false}) {
-    final color = danger ? const Color(0xFFC62828) : Colors.grey.shade800;
+      {bool danger = false, bool live = false}) {
+    const liveGreen = Color(0xFF2E7D32);
+    final valueColor =
+        live ? liveGreen : (danger ? const Color(0xFFC62828) : Colors.grey.shade800);
+    final iconColor = danger ? const Color(0xFFC62828) : Colors.grey.shade800;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: color),
+          Icon(icon, size: 16, color: iconColor),
           const SizedBox(width: 6),
           Expanded(
             child: Text(label,
@@ -260,13 +297,25 @@ class _DayCardState extends State<DayCard> {
                 style: const TextStyle(fontSize: 12)),
           ),
           const SizedBox(width: 6),
+          if (live) ...[
+            Tooltip(
+              message: 'Live tide data',
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                    color: liveGreen, shape: BoxShape.circle),
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
           Flexible(
             child: Text(
               value,
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600, color: color),
+                  fontSize: 12, fontWeight: FontWeight.w600, color: valueColor),
             ),
           ),
         ],
