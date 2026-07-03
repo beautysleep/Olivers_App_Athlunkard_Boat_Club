@@ -9,6 +9,10 @@ terraform {
       source  = "hashicorp/google"
       version = ">= 5.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = ">= 2.4"
+    }
   }
 
   # Remote state lives in a GCS bucket (bootstrapped once via gcloud — see the
@@ -32,6 +36,12 @@ locals {
   services = [
     "firestore.googleapis.com",
     "secretmanager.googleapis.com",
+    "cloudfunctions.googleapis.com",
+    "cloudbuild.googleapis.com",
+    "run.googleapis.com",
+    "artifactregistry.googleapis.com",
+    "cloudscheduler.googleapis.com",
+    "eventarc.googleapis.com",
   ]
 }
 
