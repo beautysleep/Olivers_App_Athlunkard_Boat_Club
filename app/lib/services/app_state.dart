@@ -15,17 +15,27 @@ import '../models/user_profile.dart';
 import '../shared/formatting.dart';
 import 'club_repository.dart';
 import 'firestore_tide_repository.dart';
+import 'firestore_weather_repository.dart';
 import 'tide_windows.dart';
+import 'weather_conditions.dart';
 
 class AppState extends ChangeNotifier {
-  AppState(this._repo, {FirestoreTideRepository? tideRepository})
-      : _tideRepo = tideRepository;
+  AppState(
+    this._repo, {
+    FirestoreTideRepository? tideRepository,
+    FirestoreWeatherRepository? weatherRepository,
+  })  : _tideRepo = tideRepository,
+        _weatherRepo = weatherRepository;
 
   final ClubRepository _repo;
 
   /// Optional live-tide source (Firestore). Null in tests → mock only.
   final FirestoreTideRepository? _tideRepo;
   Map<String, List<LiveHighTide>> _liveHighTides = {};
+
+  /// Optional live-weather source (Firestore). Null in tests → mock only.
+  final FirestoreWeatherRepository? _weatherRepo;
+  Map<String, LiveWeather> _liveWeather = {};
 
   UserProfile? _currentUser;
   UserProfile? get currentUser => _currentUser;
@@ -82,6 +92,23 @@ class AppState extends ChangeNotifier {
     if (highs.isEmpty) return null;
     return offerableHighTides(highs, sunrise: day.sunrise, sunset: day.sunset);
   }
+
+  // --- Live weather (Firestore) -------------------------------------------
+  /// Load live weather from Firestore. Failure-tolerant, like [loadLiveTides].
+  Future<void> loadLiveWeather() async {
+    final repo = _weatherRepo;
+    if (repo == null) return;
+    try {
+      _liveWeather = await repo.loadDailyWeather();
+      notifyListeners();
+    } catch (_) {
+      // Firestore not available — fall back to mock silently.
+    }
+  }
+
+  /// Live daily weather for [date], or null if none loaded (UI falls back to
+  /// mock).
+  LiveWeather? liveWeatherFor(DateTime date) => _liveWeather[_dateKey(date)];
 
   String _dateKey(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
       '${d.month.toString().padLeft(2, '0')}-'

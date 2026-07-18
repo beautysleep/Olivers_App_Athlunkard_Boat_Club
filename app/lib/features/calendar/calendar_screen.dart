@@ -63,6 +63,7 @@ class CalendarScreen extends StatelessWidget {
                 unavailable: isUnavailable,
                 role: user.role,
                 offerableHighTides: appState.offerableHighTidesFor(day),
+                liveWeather: appState.liveWeatherFor(day.date),
                 onSendProposal: () {
                   appState.sendProposal(day);
                   _snack(context, 'Proposal sent to all athletes.');

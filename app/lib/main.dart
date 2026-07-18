@@ -6,6 +6,7 @@ import 'features/home/role_home.dart';
 import 'services/app_scope.dart';
 import 'services/app_state.dart';
 import 'services/firestore_tide_repository.dart';
+import 'services/firestore_weather_repository.dart';
 import 'services/mock_club_repository.dart';
 
 Future<void> main() async {
@@ -22,16 +23,18 @@ class AthlunkardBoatClubApp extends StatefulWidget {
 }
 
 class _AthlunkardBoatClubAppState extends State<AthlunkardBoatClubApp> {
-  // App-wide state on mock data, with live tide overlaid from Firestore.
+  // App-wide state on mock data, with live tide + weather overlaid from Firestore.
   final AppState _appState = AppState(
     MockClubRepository(),
     tideRepository: FirestoreTideRepository(),
+    weatherRepository: FirestoreWeatherRepository(),
   );
 
   @override
   void initState() {
     super.initState();
     _appState.loadLiveTides(); // async + failure-tolerant
+    _appState.loadLiveWeather(); // async + failure-tolerant
   }
 
   @override

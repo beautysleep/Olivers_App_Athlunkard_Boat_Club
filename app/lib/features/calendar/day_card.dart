@@ -6,8 +6,13 @@ import '../../models/day_conditions.dart';
 import '../../models/session.dart';
 import '../../models/user_profile.dart';
 import '../../services/tide_windows.dart';
+import '../../services/weather_conditions.dart';
 import '../../shared/condition_style.dart';
 import '../../shared/formatting.dart';
+
+/// 1 knot = 1.852 km/h — for showing mock wind (stored in knots) in km/h, the
+/// unit the live data and the row/no-row thresholds use.
+const double _knotsToKmh = 1.852;
 
 /// A calendar day as a flip card: the colour-coded front shows the rating; tap
 /// to flip and reveal the metrics behind the call (plus the coach's actions).
@@ -22,6 +27,7 @@ class DayCard extends StatefulWidget {
     required this.onMarkUnavailable,
     required this.onOpenSession,
     this.offerableHighTides,
+    this.liveWeather,
   });
 
   final DayConditions day;
@@ -31,6 +37,9 @@ class DayCard extends StatefulWidget {
   /// height threshold). A day can have two. null = no live data (show mock);
   /// an empty list = live data but no rowable window that day.
   final List<LiveHighTide>? offerableHighTides;
+
+  /// Live daily weather (km/h wind, mm rain) for this day, or null → show mock.
+  final LiveWeather? liveWeather;
   final bool unavailable;
   final UserRole role;
   final VoidCallback onSendProposal;
@@ -175,8 +184,8 @@ class _DayCardState extends State<DayCard> {
             ),
             const Divider(height: 12),
             ..._highTideRows(day),
-            _metric(Icons.air, 'Wind', '${day.windKnots.round()} kn'),
-            _metric(Icons.water_drop, 'Rain', '${day.rainfallMm} mm'),
+            _windRow(day),
+            _rainRow(day),
             _metric(
               Icons.dangerous,
               'Water release',
@@ -279,6 +288,28 @@ class _DayCardState extends State<DayCard> {
     ];
   }
 
+  /// Wind in km/h — live when available (green dot), else the mock value
+  /// converted from knots. km/h matches the row/no-row wind thresholds.
+  Widget _windRow(DayConditions day) {
+    final w = widget.liveWeather;
+    if (w == null) {
+      return _metric(Icons.air, 'Wind',
+          '${(day.windKnots * _knotsToKmh).round()} km/h');
+    }
+    return _metric(Icons.air, 'Wind', '${w.windKmh.round()} km/h', live: true);
+  }
+
+  /// Rainfall in mm — live when available (green dot), else the mock value.
+  Widget _rainRow(DayConditions day) {
+    final w = widget.liveWeather;
+    if (w == null) {
+      return _metric(Icons.water_drop, 'Rain', '${day.rainfallMm} mm');
+    }
+    return _metric(
+        Icons.water_drop, 'Rain', '${w.rainMm.toStringAsFixed(1)} mm',
+        live: true);
+  }
+
   Widget _metric(IconData icon, String label, String value,
       {bool danger = false, bool live = false}) {
     const liveGreen = Color(0xFF2E7D32);
@@ -299,7 +330,7 @@ class _DayCardState extends State<DayCard> {
           const SizedBox(width: 6),
           if (live) ...[
             Tooltip(
-              message: 'Live tide data',
+              message: 'Live data',
               child: Container(
                 width: 6,
                 height: 6,
