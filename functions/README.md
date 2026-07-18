@@ -38,6 +38,23 @@ Sharing code across separately packaged Cloud Functions is awkward, so `shared/`
 is kept intentionally small. If real shared logic emerges, we will extract it then
 rather than forcing the structure up front.
 
+## Local secrets (API keys)
+
+Each job that calls an external API needs a key when run locally. Keep **all**
+local keys in a single file **outside any repo or git worktree** — e.g.
+`~/.abc_secrets.env`:
+
+```sh
+export WORLDTIDES_API_KEY=...
+export OPENWEATHER_API_KEY=...
+```
+
+then `source ~/.abc_secrets.env` once per shell before running a job or its
+tests. One place, never sitting next to git, and — crucially — it survives every
+git worktree, whereas a gitignored in-repo `.env` does **not** follow you into a
+new worktree. In production the Cloud Function reads each key from **GCP Secret
+Manager**, never from a file.
+
 ## Not generated yet
 
 Each job's `main.py` and `requirements.txt` are added when we build that job.
