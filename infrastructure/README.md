@@ -45,7 +45,17 @@ Then `terraform init` picks up the backend. State is never committed (gitignored
 
 ## What's provisioned so far
 
-- APIs enabled: `firestore.googleapis.com`, `secretmanager.googleapis.com`.
-- Firestore database (Native mode) in `europe-west1`.
-- Secret Manager secret `worldtides-api-key` (value loaded out-of-band via
-  `gcloud`, never in Terraform).
+- **APIs enabled** (`main.tf`): Firestore, Secret Manager, Cloud Functions,
+  Cloud Build, Cloud Run, Artifact Registry, Cloud Scheduler, Eventarc,
+  Firebase, Firebase Rules.
+- **Firestore** database (Native mode) in `europe-west1`.
+- **Firebase** project + Android app + Firestore security rules.
+- **Tide** (`secrets.tf`, `cloud_functions.tf`, `cloud_scheduler.tf`): secret
+  `worldtides-api-key`, the `tide-fetcher` gen2 function, and a daily 04:00
+  scheduler; writes `tide_predictions`.
+- **Weather** (`weather.tf`): secret `openweather-api-key`, the `weather-fetcher`
+  gen2 function, and a `weather-fetch-3h` scheduler (every 3 hours); writes
+  `weather_forecasts`. *Config written and validated; **not yet applied**.*
+
+Secret VALUES are loaded out-of-band via `gcloud`, never in Terraform or state.
+A shared `${project_id}-function-source` bucket holds the zipped function sources.
