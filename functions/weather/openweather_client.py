@@ -45,7 +45,7 @@ def fetch_hourly(
 
     Each page returns ~20 records, so ~3 pages reach 48h. Returns a single merged
     payload shaped like one timeline response (`{..., "data": [...]}`), trimmed to
-    the horizon and de-duplicated by timestamp.
+    the 48h horizon (the final page overshoots it).
     """
     meta: dict = {}
     records: list[dict] = []
@@ -72,16 +72,12 @@ def fetch_hourly(
             break
         start = page_records[-1]["dt"] + _HOUR
 
-    # De-dup by timestamp (guard against overlapping pages) and trim to horizon.
-    seen: set[int] = set()
-    trimmed: list[dict] = []
-    for record in records:
-        dt = record["dt"]
-        if dt in seen or (horizon_end is not None and dt >= horizon_end):
-            continue
-        seen.add(dt)
-        trimmed.append(record)
-    return {**meta, "data": trimmed}
+    # The final page overshoots the horizon, so trim to it. Pages don't overlap
+    # (each starts one hour past the previous page's last record), so no de-dup.
+    return {
+        **meta,
+        "data": [r for r in records if horizon_end is None or r["dt"] < horizon_end],
+    }
 
 
 def _get(url: str, params: dict, api_key: str, timeout: int) -> dict:
