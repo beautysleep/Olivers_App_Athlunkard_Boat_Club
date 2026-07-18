@@ -141,6 +141,40 @@ constraints can force **red** regardless of everything else.
 
 ---
 
+## Provisional thresholds & session-window logic
+
+> **Status: provisional (added 2026-07-18).** Working values to build and test
+> against — **not yet confirmed with the coaches.** Kept as tunable parameters,
+> never hard-coded; supersede once the coaches give real figures.
+
+The routine (non-override) decision is **windowed**, not a daily snapshot. Within
+a day's tide-high + daylight window, find the **longest contiguous interval of at
+least 1.5 hours in which wind stays below threshold for the whole interval** —
+that interval is the session time recommended to the user. The same windowing is
+applied to rainfall. (Example: tide high 06:00–10:00 but wind acceptable only
+07:30–09:00 → recommend 07:30–09:00.)
+
+| Metric | Big boats | All boats |
+| --- | --- | --- |
+| Wind (sustained) | 30 km/h | 20 km/h |
+| Rain (at prospective time) | 15 mm | 5 mm |
+| Cumulative rain — last 24 h | 100 mm | 100 mm |
+| Cumulative rain — last 48 h | 150 mm | 150 mm |
+| Cumulative rain — last 72 h | 150 mm | 150 mm |
+
+"Big boats" tolerate more than "all boats" (the all-boats figure is the stricter
+gate). The 48 h cumulative band is additional to the 24 h / 72 h bands named
+above.
+
+**Forecast resolution.** The windowing needs intraday detail. The weather API
+gives **hourly** wind/rain to ~48 h and **daily** beyond that, so near-term
+windows are evaluated on the hour. For days beyond 48 h we take the pragmatic
+assumption of **constant hourly wind/rain across the day** (that day's single
+forecast figure) — enough for Tier-1 planning, since those days are re-checked at
+hourly resolution once they enter the 48 h horizon.
+
+---
+
 ## Open items to confirm before building
 
 - ~~Dam name / source URL~~ — **confirmed:** ESB Ardnacrusha; signal is Parteen
