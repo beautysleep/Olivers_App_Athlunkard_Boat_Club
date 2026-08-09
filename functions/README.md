@@ -20,17 +20,28 @@ shared/           Small common helpers (Firestore client, condition data model).
 
 ### water_release — the hard override
 
-Scrapes and parses the ESB hydrometric PDFs (there is no API):
+Scrapes and parses the ESB hydrometric PDFs (there is no API, and no HTTPS
+either — `esbhydro.ie` serves plain HTTP only):
 
-- **Primary signal — Parteen Weir discharge.** `01-Shannon-Hydro-Forecast.pdf`
-  carries a prose ~5-day forecast; Parteen Weir is the last weir before the club's
-  launch point, so its discharge is the dominant indicator. Discharging ⇒ no
-  rowing.
+- **Primary signal — Parteen Weir discharge forecast.**
+  `01-Shannon-Hydro-Forecast.pdf` carries a prose ~5-day forecast; Parteen Weir
+  is the last weir before the club's launch point, so its discharge is the
+  dominant indicator. Discharging ⇒ no rowing. In practice this is fragile
+  prose-parsing — only one phrasing has ever been observed, so the fetcher can
+  only assert "no discharge expected" or "unparsed," never "discharging"; see
+  `water_release/README.md`.
 - **Secondary signal — total Ardnacrusha flow.** `07-Total-Ardnacrusha-Flow.pdf`;
-  below roughly 300 m³/s is fine. Corroborating, not deciding.
+  below roughly 300 m³/s is fine. Corroborating, not deciding. Turned out to be
+  a clean structured table, not prose.
+- **Also captured — total Parteen Weir flow.** `08-Total-Parteen-Weir-Flow.pdf`
+  — not in the original planning doc; found while building this job. Same clean
+  table shape as #07, but a direct current numeric reading at Parteen Weir
+  itself, arguably a more robust signal than the primary prose forecast.
 
-Both are linked from the ESB hydrometric page. See
-`../Scaffolding/Planning_and_Ideation/Data_needed_for_rowing_safety_decision.md`.
+All three are linked from the ESB hydrometric page. See
+`../Scaffolding/Planning_and_Ideation/Data_needed_for_rowing_safety_decision.md`
+and `water_release/README.md` for the full detail, including the classifier's
+known limitation.
 
 ## A note on shared code
 

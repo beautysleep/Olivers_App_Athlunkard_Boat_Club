@@ -65,8 +65,19 @@ Two documents matter, in priority order:
    identical** to the Parteen signal — treat it as supporting evidence, not the
    deciding factor.
 
+> **Found while building this (2026-08-09):** a third relevant PDF,
+> `08-Total-Parteen-Weir-Flow.pdf`
+> (<http://www.esbhydro.ie/Shannon/08-Total-Parteen-Weir-Flow.pdf>), not
+> mentioned above — a direct current numeric flow reading **at Parteen Weir
+> itself**, in the same clean table shape as #07 (both turned out to be
+> structured tables, not prose, despite this document assuming otherwise). It's
+> arguably a more robust signal than #1's prose forecast, since it's a direct
+> reading at the exact location that matters rather than a parsed sentence —
+> worth weighing against the "primary/secondary" designation above once real
+> data accumulates. The fetcher captures all three.
+
 > For the initial prototype, capture the rest of the information in these PDFs as
-> well — not just the two values above — since it is cheap to store and may prove
+> well — not just the values above — since it is cheap to store and may prove
 > useful once we see real data.
 
 ### B. Daylight (hard override)

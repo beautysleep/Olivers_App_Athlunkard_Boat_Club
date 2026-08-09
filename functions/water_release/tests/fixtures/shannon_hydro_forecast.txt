@@ -1,0 +1,86 @@
+Shannon levels this morning 07/08/2026:
+Gauge Location Level Highest Level since 1932
+m.O.D.
+m.O.D. Date
+Lough Allen 48.39 50.85 Jan 65
+Lough Ree 37.44 39.72 Jan 16
+Athlone Downstream 35.40 39.08 Jan 16
+Lough Derg - Portumna 33.50 34.76 Nov 09
+Lough Derg - Pier Head, Killaloe 33.43 34.33 Nov 09
+Note: All levels are relative to Poolbeg Datum.
+Met Éireann 5 Day Rain Forecast:
+Approximately 7mm of rain is forecast for the Shannon catchment to Lough Allen over the
+next 5 days.
+Approximately 6mm of rain is forecast for the Shannon catchment from Lough Allen to Lough
+Ree over the next 5 days.
+Approximately 4mm of rain is forecast for the Shannon catchment from Lough Ree to Lough
+Derg over the next 5 days.
+Level at Athlone Downstream:
+Gauge is downstream of Athlone Weir and is a measure of the water level at the north end of
+the callows south of Athlone.
+Note: 2 sluices at Athlone Weir open as of 16/07/2026
+Discharge at Parteen Weir:
+It is expected that no additional discharge will be necessary at Parteen Weir over the
+next 5 days based on current weather forecast
+Lough Allen Date of Prediction: Friday 7 August 2026
+Catchment Rainfall
+Historical: based on daily records for Lough Allen in OISHYDRO (ESB Database)
+Saturday 8 August 2026 to Wednesday 12 August 2026: based on Met Éireann forecast for Lough
+Allen catchment
+Historical Peak Levels
+Flood Event Peak Level (m.O.D.)
+Winter 1994/1995 (March 1995) 50.50
+Winter 1999/2000 (December 1999) 50.55
+Winter 2006/2007 (January 2007) 49.72
+Winter 2009/2010 (November 2009) 50.77
+Winter 2015/2016 (December 2015) 50.60
+Highest since 1932 (January 1965) 50.85
+Predicted Highest Level (using the ESB Shannon Forecasting Model)
+48.42 m.O.D. on Tuesday 11 August 2026
+Assumptions
+One gate at Lough Allen open 7cm throughout forecast period
+All levels refer to metres above Poolbeg Ordnance Datum
+Lough Ree Date of Prediction: Friday 7 August 2026
+Catchment Rainfall
+Historical: based on daily records for Lough Allen and Athlone in OISHYDRO (ESB Database)
+Saturday 8 August 2026 to Wednesday 12 August 2026: based on Met Éireann forecast for Lough
+Ree catchment
+Historical Peak Levels
+Flood Event Peak Level (m.O.D.)
+Winter 1994/1995 (March 1995) 38.97
+Winter 1999/2000 (December 1999) 39.17
+Winter 2006/2007 (January 2007) 39.19
+Winter 2009/2010 (November 2009) 39.67
+Winter 2015/2016 (January 2016) 39.72
+Highest since 1932 (January 2016) 39.72
+Predicted Highest Level (using the ESB Shannon Forecasting Model)
+37.44 m.O.D. on Tuesday 11 August 2026
+Assumptions
+Note: 2 sluices at Athlone Weir open 0.9m throughout forecast period.
+All levels refer to metres above Poolbeg Ordnance Datum
+Lough Derg Date of Prediction: Friday 7 August 2026
+Catchment Rainfall
+Historical: based on daily records for Athlone, Portumna, Victoria Lock, Killaloe and Parteen in
+OISHYDRO (ESB Database)
+Saturday 8 August 2026 to Wednesday 12 August 2026: based on Met Éireann forecast for Lough
+Derg catchment
+Note: Lough Derg level is taken to be average of level recorded at Portumna and Pier Head, Killaloe.
+The variation in level between Portumna and Pier Head is a function of flow magnitude and wind
+direction.
+Historical Peak Levels
+Flood Event Peak Level (m.O.D.)
+Portumna Killaloe
+Winter 1994/1995 (March 1995) 34.40 34.01
+Winter 1999/2000 (December 1999) 34.30 33.90
+Winter 2006/2007 (January 2007) 34.30 33.91
+Winter 2009/2010 (November 2009) 34.76 34.33
+Winter 2015/2016 (January 2016) 34.68 34.26
+Highest since 1932 (November 2009) 34.76 34.33
+Predicted Highest Level (using the ESB Shannon Forecasting Model)
+33.47 m.O.D. on Monday 10 August 2026
+Assumptions
+Total combined Parteen Discharge ranging between 10.5 m3/s and 30 m3/s throughout
+forecast period.
+Median Flood Level is the flood level that has an annual exceedance probability of 50% (i.e.
+return period 2 years).
+All levels refer to metres above Poolbeg Ordnance Datum
