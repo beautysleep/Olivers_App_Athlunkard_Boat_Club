@@ -56,6 +56,11 @@ Then `terraform init` picks up the backend. State is never committed (gitignored
 - **Weather** (`weather.tf`): secret `openweather-api-key`, the `weather-fetcher`
   gen2 function, and a `weather-fetch-3h` scheduler (every 3 hours); writes
   `weather_forecasts`. *Config written and validated; **not yet applied**.*
+- **Water release** (`water_release.tf`): the `water-release-fetcher` gen2
+  function and a `water-release-fetch-daily` scheduler (10:00 Europe/Dublin);
+  writes `water_release_status`. **No secret** — ESB's hydrometric PDFs are
+  public downloads, unlike tide/weather's API sources. *Config written and
+  validated; **not yet applied**.*
 
 Secret VALUES are loaded out-of-band via `gcloud`, never in Terraform or state.
 A shared `${project_id}-function-source` bucket holds the zipped function sources.
