@@ -28,69 +28,71 @@ class CalendarScreen extends StatelessWidget {
 
     return SingleChildScrollView(
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-          child: Text(
-            'Upcoming conditions',
-            style: Theme.of(context).textTheme.titleMedium,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(
+              'Upcoming conditions',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
-        ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Swipe sideways. Tap a day to flip it and see the metrics.',
-            style: TextStyle(color: Colors.grey),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Swipe sideways. Tap a day to flip it and see the metrics.',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 332,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: days.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, i) {
-              final day = days[i];
-              final session = appState.sessionForDate(day.date);
-              final isUnavailable =
-                  unavailable.contains(_dateOnly(day.date));
-              return DayCard(
-                day: day,
-                session: session,
-                unavailable: isUnavailable,
-                role: user.role,
-                offerableHighTides: appState.offerableHighTidesFor(day),
-                liveWeather: appState.liveWeatherFor(day.date),
-                onSendProposal: () {
-                  appState.sendProposal(day);
-                  _snack(context, 'Proposal sent to all athletes.');
-                },
-                onMarkUnavailable: () {
-                  appState.markUnavailable(day);
-                  _snack(context, "Marked unavailable — won't be proposed.");
-                },
-                onOpenSession: () {
-                  if (session != null) {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) =>
-                          SessionDetailScreen(sessionId: session.id),
-                    ));
-                  }
-                },
-              );
-            },
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 332,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: days.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, i) {
+                final day = days[i];
+                final session = appState.sessionForDate(day.date);
+                final isUnavailable = unavailable.contains(_dateOnly(day.date));
+                return DayCard(
+                  day: day,
+                  session: session,
+                  unavailable: isUnavailable,
+                  role: user.role,
+                  offerableHighTides: appState.offerableHighTidesFor(day),
+                  liveWeather: appState.liveWeatherFor(day.date),
+                  liveWaterRelease: appState.liveWaterRelease,
+                  onSendProposal: () {
+                    appState.sendProposal(day);
+                    _snack(context, 'Proposal sent to all athletes.');
+                  },
+                  onMarkUnavailable: () {
+                    appState.markUnavailable(day);
+                    _snack(context, "Marked unavailable — won't be proposed.");
+                  },
+                  onOpenSession: () {
+                    if (session != null) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              SessionDetailScreen(sessionId: session.id),
+                        ),
+                      );
+                    }
+                  },
+                );
+              },
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: _Legend(),
-        ),
-        const SizedBox(height: 16),
-      ],
+          const SizedBox(height: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: _Legend(),
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }
@@ -110,7 +112,9 @@ class _Legend extends StatelessWidget {
             _LegendRow(Conditions.green, 'Good — any boat can go out.'),
             SizedBox(height: 8),
             _LegendRow(
-                Conditions.amber, 'Marginal — larger boats / experienced only.'),
+              Conditions.amber,
+              'Marginal — larger boats / experienced only.',
+            ),
             SizedBox(height: 8),
             _LegendRow(Conditions.red, 'Not rowable (wind, rain, or release).'),
           ],

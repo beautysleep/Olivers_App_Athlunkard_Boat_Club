@@ -15,8 +15,10 @@ import '../models/user_profile.dart';
 import '../shared/formatting.dart';
 import 'club_repository.dart';
 import 'firestore_tide_repository.dart';
+import 'firestore_water_release_repository.dart';
 import 'firestore_weather_repository.dart';
 import 'tide_windows.dart';
+import 'water_release_conditions.dart';
 import 'weather_conditions.dart';
 
 class AppState extends ChangeNotifier {
@@ -24,8 +26,10 @@ class AppState extends ChangeNotifier {
     this._repo, {
     FirestoreTideRepository? tideRepository,
     FirestoreWeatherRepository? weatherRepository,
-  })  : _tideRepo = tideRepository,
-        _weatherRepo = weatherRepository;
+    FirestoreWaterReleaseRepository? waterReleaseRepository,
+  }) : _tideRepo = tideRepository,
+       _weatherRepo = weatherRepository,
+       _waterReleaseRepo = waterReleaseRepository;
 
   final ClubRepository _repo;
 
@@ -36,6 +40,12 @@ class AppState extends ChangeNotifier {
   /// Optional live-weather source (Firestore). Null in tests → mock only.
   final FirestoreWeatherRepository? _weatherRepo;
   Map<String, LiveWeather> _liveWeather = {};
+
+  /// Optional live-water-release source (Firestore). Null in tests → mock
+  /// only. Global, not per-day — unlike tide/weather there's a single current
+  /// status, not one value per calendar day.
+  final FirestoreWaterReleaseRepository? _waterReleaseRepo;
+  LiveWaterRelease? _liveWaterRelease;
 
   UserProfile? _currentUser;
   UserProfile? get currentUser => _currentUser;
@@ -110,7 +120,27 @@ class AppState extends ChangeNotifier {
   /// mock).
   LiveWeather? liveWeatherFor(DateTime date) => _liveWeather[_dateKey(date)];
 
-  String _dateKey(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
+  // --- Live water release (Firestore) --------------------------------------
+  /// Load live water-release status from Firestore. Failure-tolerant, like
+  /// [loadLiveTides].
+  Future<void> loadLiveWaterRelease() async {
+    final repo = _waterReleaseRepo;
+    if (repo == null) return;
+    try {
+      _liveWaterRelease = await repo.loadStatus();
+      notifyListeners();
+    } catch (_) {
+      // Firestore not available — fall back to mock silently.
+    }
+  }
+
+  /// The current live water-release status, or null if none loaded (UI falls
+  /// back to mock). Global, not per-day — there's no lookup-by-date method
+  /// here, unlike [liveHighTidesFor]/[liveWeatherFor].
+  LiveWaterRelease? get liveWaterRelease => _liveWaterRelease;
+
+  String _dateKey(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
@@ -287,14 +317,16 @@ class AppState extends ChangeNotifier {
     String body, {
     String? sessionId,
   }) {
-    _repo.addNotification(AppNotification(
-      id: _repo.nextId('n'),
-      recipientId: recipientId,
-      type: type,
-      title: title,
-      body: body,
-      createdAt: DateTime.now(),
-      sessionId: sessionId,
-    ));
+    _repo.addNotification(
+      AppNotification(
+        id: _repo.nextId('n'),
+        recipientId: recipientId,
+        type: type,
+        title: title,
+        body: body,
+        createdAt: DateTime.now(),
+        sessionId: sessionId,
+      ),
+    );
   }
 }
