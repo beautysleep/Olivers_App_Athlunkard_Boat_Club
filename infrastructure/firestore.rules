@@ -16,6 +16,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Water-release status, same as tides/weather: anyone may read; no client
+    // may write (the backend service account bypasses rules).
+    match /water_release_status/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;
