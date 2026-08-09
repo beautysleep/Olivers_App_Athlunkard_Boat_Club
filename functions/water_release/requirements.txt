@@ -8,7 +8,9 @@ tzdata>=2024.1
 # Pulls in pdfminer.six (pure Python), Pillow, and pypdfium2 as prebuilt-wheel
 # transitive deps — no compiler needed, but heavier than requests/tzdata alone.
 pdfplumber>=0.11,<1
-# Note: functions-framework and google-cloud-firestore are NOT pinned here yet
-# — added at the stage that needs them (Firestore write), matching the tide
-# service's precedent. functions-framework is provided by the Cloud Functions
-# Python runtime; install it in a local venv only for local testing.
+# Firestore access from the Cloud Function — no stdlib equivalent; official
+# Google client (Apache-2.0). Same approved dependency as the tide/weather
+# services.
+google-cloud-firestore>=2.16,<3
+# Note: functions-framework is NOT pinned here — the Cloud Functions Python
+# runtime provides it. Install it in a local venv only for local testing.
