@@ -9,22 +9,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'weather_conditions.dart';
 
 class FirestoreWeatherRepository {
-  /// Live daily weather per local day, keyed by 'YYYY-MM-DD'. The `hourly` series
-  /// is stored too but not read here — it's for the future decision engine.
+  /// Everything the app reads off a `weather_forecasts` day, keyed by
+  /// 'YYYY-MM-DD'. Returned together from one pass over the collection rather
+  /// than read twice. The `hourly` series is stored too but not read here —
+  /// it's for the future decision engine.
   ///
   /// Firestore is accessed lazily inside this method (not in a field), so nothing
   /// breaks at construction if Firebase isn't initialised — callers wrap this in
   /// try/catch and fall back to mock data.
-  Future<Map<String, LiveWeather>> loadDailyWeather() async {
+  Future<({Map<String, LiveWeather> weather})> loadDailyForecasts() async {
     final snapshot =
         await FirebaseFirestore.instance.collection('weather_forecasts').get();
 
-    final result = <String, LiveWeather>{};
+    final weather = <String, LiveWeather>{};
     for (final doc in snapshot.docs) {
-      final daily = (doc.data()['daily'] as Map?)?.cast<String, dynamic>();
-      final weather = liveWeatherFromDaily(daily);
-      if (weather != null) result[doc.id] = weather;
+      final data = doc.data();
+      final daily = (data['daily'] as Map?)?.cast<String, dynamic>();
+      final point = liveWeatherFromDaily(daily);
+      if (point != null) weather[doc.id] = point;
     }
-    return result;
+    return (weather: weather);
   }
 }

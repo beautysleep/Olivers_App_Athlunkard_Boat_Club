@@ -109,7 +109,7 @@ class AppState extends ChangeNotifier {
     final repo = _weatherRepo;
     if (repo == null) return;
     try {
-      _liveWeather = await repo.loadDailyWeather();
+      _liveWeather = (await repo.loadDailyForecasts()).weather;
       notifyListeners();
     } catch (_) {
       // Firestore not available — fall back to mock silently.
