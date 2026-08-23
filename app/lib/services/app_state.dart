@@ -17,6 +17,7 @@ import 'club_repository.dart';
 import 'firestore_tide_repository.dart';
 import 'firestore_water_release_repository.dart';
 import 'firestore_weather_repository.dart';
+import 'daylight_conditions.dart';
 import 'tide_windows.dart';
 import 'water_release_conditions.dart';
 import 'weather_conditions.dart';
@@ -40,6 +41,7 @@ class AppState extends ChangeNotifier {
   /// Optional live-weather source (Firestore). Null in tests → mock only.
   final FirestoreWeatherRepository? _weatherRepo;
   Map<String, LiveWeather> _liveWeather = {};
+  Map<String, LiveDaylight> _liveDaylight = {};
 
   /// Optional live-water-release source (Firestore). Null in tests → mock
   /// only. Global, not per-day — unlike tide/weather there's a single current
@@ -92,15 +94,26 @@ class AppState extends ChangeNotifier {
   List<LiveHighTide> liveHighTidesFor(DateTime date) =>
       _liveHighTides[_dateKey(date)] ?? const [];
 
+  /// Live daylight for [date], or null when the day is beyond the weather
+  /// forecast horizon (the UI then says so rather than inventing a window).
+  LiveDaylight? liveDaylightFor(DateTime date) => _liveDaylight[_dateKey(date)];
+
   /// The offerable high-tide sessions for [day]: highs that fall in daylight and
-  /// are at/above the height threshold. A day can yield two. Returns null when
-  /// there's no live tide data for the day (so the UI falls back to mock).
-  /// Daylight uses the day's (currently mock) sunrise/sunset until a live
-  /// source exists.
+  /// are at/above the height threshold. A day can yield two.
+  ///
+  /// Returns null when either input is missing — no live tide for the day, or
+  /// no live daylight to judge it against. Filtering real tides against mock
+  /// daylight would silently produce a wrong answer, so it is not done.
   List<LiveHighTide>? offerableHighTidesFor(DayConditions day) {
     final highs = liveHighTidesFor(day.date);
     if (highs.isEmpty) return null;
-    return offerableHighTides(highs, sunrise: day.sunrise, sunset: day.sunset);
+    final daylight = liveDaylightFor(day.date);
+    if (daylight == null) return null;
+    return offerableHighTides(
+      highs,
+      sunrise: daylight.sunrise,
+      sunset: daylight.sunset,
+    );
   }
 
   // --- Live weather (Firestore) -------------------------------------------
@@ -109,7 +122,9 @@ class AppState extends ChangeNotifier {
     final repo = _weatherRepo;
     if (repo == null) return;
     try {
-      _liveWeather = (await repo.loadDailyForecasts()).weather;
+      final forecasts = await repo.loadDailyForecasts();
+      _liveWeather = forecasts.weather;
+      _liveDaylight = forecasts.daylight;
       notifyListeners();
     } catch (_) {
       // Firestore not available — fall back to mock silently.

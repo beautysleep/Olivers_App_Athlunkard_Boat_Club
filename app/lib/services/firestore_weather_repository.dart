@@ -6,6 +6,7 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'daylight_conditions.dart';
 import 'weather_conditions.dart';
 
 class FirestoreWeatherRepository {
@@ -17,17 +18,29 @@ class FirestoreWeatherRepository {
   /// Firestore is accessed lazily inside this method (not in a field), so nothing
   /// breaks at construction if Firebase isn't initialised — callers wrap this in
   /// try/catch and fall back to mock data.
-  Future<({Map<String, LiveWeather> weather})> loadDailyForecasts() async {
+  Future<
+    ({Map<String, LiveWeather> weather, Map<String, LiveDaylight> daylight})
+  >
+  loadDailyForecasts() async {
     final snapshot =
         await FirebaseFirestore.instance.collection('weather_forecasts').get();
 
     final weather = <String, LiveWeather>{};
+    final daylight = <String, LiveDaylight>{};
     for (final doc in snapshot.docs) {
       final data = doc.data();
       final daily = (data['daily'] as Map?)?.cast<String, dynamic>();
       final point = liveWeatherFromDaily(daily);
       if (point != null) weather[doc.id] = point;
+
+      // Firestore hands back Timestamps; converting here keeps
+      // daylight_conditions.dart free of any Firestore dependency.
+      final day = liveDaylightFromDocument({
+        'sunrise': (data['sunrise'] as Timestamp?)?.toDate(),
+        'sunset': (data['sunset'] as Timestamp?)?.toDate(),
+      });
+      if (day != null) daylight[doc.id] = day;
     }
-    return (weather: weather);
+    return (weather: weather, daylight: daylight);
   }
 }

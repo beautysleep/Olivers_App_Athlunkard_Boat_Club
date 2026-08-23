@@ -53,4 +53,37 @@ void main() {
       expect(kMinRowableHighTideMetres, 4.2);
     });
   });
+
+    test('the daylight edge offset can widen the window', () {
+      // A high tide 20 minutes before sunrise: excluded at the default edge,
+      // included once the coaches allow launching in pre-dawn light.
+      final sunrise = DateTime(2026, 8, 24, 6, 0);
+      final sunset = DateTime(2026, 8, 24, 20, 0);
+      final justBeforeSunrise = [
+        LiveHighTide(time: DateTime(2026, 8, 24, 5, 40), heightMetres: 4.5),
+      ];
+
+      expect(
+        offerableHighTides(
+          justBeforeSunrise,
+          sunrise: sunrise,
+          sunset: sunset,
+        ),
+        isEmpty,
+      );
+      expect(
+        offerableHighTides(
+          justBeforeSunrise,
+          sunrise: sunrise,
+          sunset: sunset,
+          daylightEdgeOffsetMinutes: 30,
+        ),
+        hasLength(1),
+      );
+    });
+
+    test('the default edge offset is zero — no guessed twilight allowance', () {
+      expect(kDaylightEdgeOffsetMinutes, 0);
+    });
+
 }
