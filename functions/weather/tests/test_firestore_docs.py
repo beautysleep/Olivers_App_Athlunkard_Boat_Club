@@ -55,8 +55,8 @@ class GroupHourlyByLocalDayTests(unittest.TestCase):
         # 23:30 UTC in summer is 00:30 the *next* day local (IST, +1h), so it
         # must land in the next local day — the point of grouping on local time.
         late = _pt("2026-07-03T23:30:00+00:00")  # local 07-04
-        day = _pt("2026-07-03T10:00:00+00:00")   # local 07-03
-        nxt = _pt("2026-07-04T08:00:00+00:00")   # local 07-04
+        day = _pt("2026-07-03T10:00:00+00:00")  # local 07-03
+        nxt = _pt("2026-07-04T08:00:00+00:00")  # local 07-04
 
         groups = group_hourly_by_local_day([day, late, nxt])
 

@@ -31,7 +31,9 @@ class WeatherPoint:
     wind_speed_ms: float  # sustained wind, m/s (provider-native SI)
     wind_gust_ms: float | None  # gust, m/s — nullable (not always present)
     rain_mm: float  # precipitation for the period, mm
-    pop: float | None  # probability of precipitation, 0..1 — nullable (4.0 daily omits it)
+    pop: (
+        float | None
+    )  # probability of precipitation, 0..1 — nullable (4.0 daily omits it)
     # Daylight bounds for the day. Present only on daily records — the mirror
     # of gust/pop above, which only hourly records carry. Daylight is a hard
     # override in the row/no-row decision, so these are stored, not dropped.

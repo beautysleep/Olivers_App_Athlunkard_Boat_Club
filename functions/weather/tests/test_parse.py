@@ -57,8 +57,8 @@ class DailyParseTests(unittest.TestCase):
         p = self.points[0]
         self.assertEqual(p.wind_speed_ms, 5.51)
         self.assertIsNone(p.wind_gust_ms)  # 4.0 daily omits gust
-        self.assertIsNone(p.pop)           # 4.0 daily omits pop
-        self.assertEqual(p.rain_mm, 0.0)   # dry
+        self.assertIsNone(p.pop)  # 4.0 daily omits pop
+        self.assertEqual(p.rain_mm, 0.0)  # dry
 
     def test_daily_records_carry_sunrise_and_sunset(self):
         p = self.points[0]
