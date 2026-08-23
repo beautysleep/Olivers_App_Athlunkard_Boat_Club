@@ -51,6 +51,11 @@ def main(argv: list[str]) -> int:
     print(f'  "{forecast.discharge_statement_raw}"')
     if forecast.date_of_prediction:
         print(f"  (date of prediction: {forecast.date_of_prediction.isoformat()})")
+    if forecast.expected_discharge_min_m3s is not None:
+        print(
+            f"  expected discharge: {forecast.expected_discharge_min_m3s}"
+            f"-{forecast.expected_discharge_max_m3s} m3/s"
+        )
     if forecast.planning_assumption_raw:
         print(
             f"  planning assumption: {forecast.planning_assumption_min_m3s}"

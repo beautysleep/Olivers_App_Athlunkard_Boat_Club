@@ -57,6 +57,8 @@ class ParteenForecastTests(unittest.TestCase):
             "current weather forecast",
             discharge_classification=NO_DISCHARGE_EXPECTED,
             date_of_prediction=date(2026, 8, 7),
+            expected_discharge_min_m3s=None,
+            expected_discharge_max_m3s=None,
             planning_assumption_raw="Total combined Parteen Discharge ranging "
             "between 10.5 m3/s and 30 m3/s throughout forecast period.",
             planning_assumption_min_m3s=10.5,
@@ -74,6 +76,8 @@ class ParteenForecastTests(unittest.TestCase):
             discharge_statement_raw="some unrecognised wording",
             discharge_classification=UNPARSED,
             date_of_prediction=None,
+            expected_discharge_min_m3s=None,
+            expected_discharge_max_m3s=None,
             planning_assumption_raw=None,
             planning_assumption_min_m3s=None,
             planning_assumption_max_m3s=None,

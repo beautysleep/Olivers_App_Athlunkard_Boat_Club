@@ -27,24 +27,39 @@ tension (no thresholding/weighting logic here; that belongs to the not-yet-built
 
 ## Known limitation: the discharge classifier can only ever recognise ONE phrasing
 
-Only one real example of the "Discharge at Parteen Weir" sentence has ever
-been captured (fetched 2026-08-09):
+ESB overwrites this PDF in place, so the live URL only ever shows today's
+wording. Fifteen real forecasts have now been captured — today's plus fourteen
+Internet Archive snapshots of the same URL spanning 2017-2026, which is the
+only way to observe the wording used on a day Parteen Weir *is* discharging.
+See `tests/fixtures/README.md` for provenance. Across those, ESB words the
+statement five ways:
 
-> "It is expected that no additional discharge will be necessary at Parteen
-> Weir over the next 5 days based on current weather forecast."
+| Wording | Meaning |
+| --- | --- |
+| "no additional discharge **will be** necessary" (2024-) | clear |
+| "there will be **no additional discharge necessary**" (2017-2023) | clear |
+| "a discharge **of between** 55m3/s and 95 m3/s will be necessary" | discharging |
+| "a discharge **ranging between** 55 and 170m3/s will be necessary" | discharging |
+| "a discharge of between **95 and 55**m3/s will be necessary" (descending) | discharging |
 
-There is **no captured example of the wording ESB uses when Parteen Weir *is*
-discharging**. Rather than guess a pattern for text nobody has seen,
-`discharge_classification` has exactly two values:
+`discharge_classification` therefore has three values:
 
-- `no_discharge_expected` — the one observed phrasing matched.
-- `unparsed` — anything else, including a real "discharging" statement. The
-  raw sentence is always stored verbatim regardless, for a human to read.
+- `no_discharge_expected` — either "clear" phrasing matched.
+- `discharge_expected` — a discharge range matched; `expected_discharge_min_m3s`
+  / `expected_discharge_max_m3s` carry it, ordered so min is the smaller even
+  when ESB writes the range descending.
+- `unparsed` — wording matching none of the above. The raw sentence is always
+  stored verbatim regardless, for a human to read.
 
-**Consequence: this service can never positively assert "danger" from PDF #1
-alone.** That's a real gap, not hidden — if ESB's wording changes (including to
-announce an actual discharge), it degrades to `unparsed`, not a false "clear."
-Fix requires capturing a real example of the alternate wording first.
+Classification reads only ESB's **forward-looking clause** ("It is expected
+that … based on current weather forecast"). One captured forecast opens with a
+past fact — "Additional discharge of 50m3/s at Parteen Weir ceased as of this
+morning." — which must not be read as a live discharge.
+
+`unparsed` remains the deliberate never-guess state: wording ESB has not been
+observed to use is never read as "clear". Since all fifteen captured forecasts
+classify, a live `unparsed` means genuinely new wording, and the canary test
+fails on it rather than letting the app quietly degrade to "Unknown".
 
 ## Firestore shape
 
@@ -57,6 +72,7 @@ water_release_status/current
   source, fetched_at
   parteen_forecast:
     date_of_prediction, discharge_statement_raw, discharge_classification,
+    expected_discharge_min_m3s, expected_discharge_max_m3s,
     planning_assumption_raw, planning_assumption_min_m3s, planning_assumption_max_m3s,
     source_url
   ardnacrusha_flow:   { label, current_value_m3s, current_reading_at, units,

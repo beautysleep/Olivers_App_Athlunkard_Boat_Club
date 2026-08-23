@@ -14,12 +14,14 @@ from zoneinfo import ZoneInfo
 # assumed to be expressed in this zone — unconfirmed with ESB (see README).
 CLUB_TZ = ZoneInfo("Europe/Dublin")
 
-# The only Parteen Weir discharge-statement phrasing ever observed in a real
-# ESB forecast (fetched 2026-08-09): "no additional discharge will be
-# necessary". There is no captured example of the "IS discharging" wording, so
-# no state is invented for it — anything that doesn't match the observed
-# pattern is classified UNPARSED rather than guessed as safe or unsafe.
+# How the Parteen Weir discharge statement in 01-Shannon-Hydro-Forecast.pdf is
+# classified. Every phrasing recognised here was captured from a real ESB
+# forecast — see tests/fixtures/README.md for the samples and where they came
+# from. Anything that matches none of them is UNPARSED rather than guessed as
+# safe or unsafe: a wording ESB has never been observed to use must never be
+# read as "clear".
 NO_DISCHARGE_EXPECTED = "no_discharge_expected"
+DISCHARGE_EXPECTED = "discharge_expected"
 UNPARSED = "unparsed"
 
 
@@ -64,8 +66,14 @@ class ParteenForecast:
     01-Shannon-Hydro-Forecast.pdf."""
 
     discharge_statement_raw: str  # verbatim sentence, always stored
-    discharge_classification: str  # NO_DISCHARGE_EXPECTED | UNPARSED
+    # NO_DISCHARGE_EXPECTED | DISCHARGE_EXPECTED | UNPARSED
+    discharge_classification: str
     date_of_prediction: date | None  # the PDF's own forecast-issue date
+    # The discharge range ESB expects, when discharging. Ordered so min is the
+    # smaller even where ESB writes the range descending; the direction stays
+    # readable in discharge_statement_raw. None unless DISCHARGE_EXPECTED.
+    expected_discharge_min_m3s: float | None
+    expected_discharge_max_m3s: float | None
     planning_assumption_raw: str | None
     planning_assumption_min_m3s: float | None
     planning_assumption_max_m3s: float | None
@@ -80,6 +88,8 @@ class ParteenForecast:
             ),
             "discharge_statement_raw": self.discharge_statement_raw,
             "discharge_classification": self.discharge_classification,
+            "expected_discharge_min_m3s": self.expected_discharge_min_m3s,
+            "expected_discharge_max_m3s": self.expected_discharge_max_m3s,
             "planning_assumption_raw": self.planning_assumption_raw,
             "planning_assumption_min_m3s": self.planning_assumption_min_m3s,
             "planning_assumption_max_m3s": self.planning_assumption_max_m3s,

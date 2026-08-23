@@ -23,7 +23,7 @@ from esbhydro_client import (  # noqa: E402
     fetch_flow_table,
     fetch_forecast_text,
 )
-from models import NO_DISCHARGE_EXPECTED, UNPARSED  # noqa: E402
+from models import DISCHARGE_EXPECTED, NO_DISCHARGE_EXPECTED  # noqa: E402
 from parse import parse_flow_table, parse_forecast  # noqa: E402
 
 _RUN = os.environ.get("RUN_LIVE_CANARY") == "1"
@@ -35,13 +35,28 @@ class LiveCanaryTests(unittest.TestCase):
         forecast = parse_forecast(
             fetch_forecast_text(FORECAST_URL), source_url=FORECAST_URL
         )
-        # The classifier must recognise *something* — a real ESB PDF whose
-        # discharge statement no longer matches either the known phrasing or
-        # our own extraction is a genuine contract break, not a soft failure.
+        # Every one of the 15 real forecasts captured so far (2017-2026, see
+        # tests/fixtures/README.md) classifies. So a live UNPARSED means ESB
+        # has started wording the statement in a way we have never seen — a
+        # genuine contract break that must fail loudly, because the app
+        # degrades it to "Unknown" and the coach silently loses the override.
         self.assertIn(
-            forecast.discharge_classification, (NO_DISCHARGE_EXPECTED, UNPARSED)
+            forecast.discharge_classification,
+            (NO_DISCHARGE_EXPECTED, DISCHARGE_EXPECTED),
+            f"unrecognised ESB wording: {forecast.discharge_statement_raw!r}",
         )
         self.assertTrue(forecast.discharge_statement_raw)
+
+    def test_a_discharging_forecast_always_carries_a_range(self):
+        forecast = parse_forecast(
+            fetch_forecast_text(FORECAST_URL), source_url=FORECAST_URL
+        )
+        if forecast.discharge_classification == DISCHARGE_EXPECTED:
+            self.assertIsNotNone(forecast.expected_discharge_min_m3s)
+            self.assertLessEqual(
+                forecast.expected_discharge_min_m3s,
+                forecast.expected_discharge_max_m3s,
+            )
 
     def test_ardnacrusha_flow_pdf_still_has_thirty_readings(self):
         series = parse_flow_table(

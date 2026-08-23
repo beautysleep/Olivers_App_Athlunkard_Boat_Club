@@ -15,7 +15,11 @@ from datetime import date
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from models import NO_DISCHARGE_EXPECTED, UNPARSED  # noqa: E402
+from models import (  # noqa: E402
+    DISCHARGE_EXPECTED,
+    NO_DISCHARGE_EXPECTED,
+    UNPARSED,
+)
 from parse import parse_flow_table, parse_forecast  # noqa: E402
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -29,6 +33,10 @@ def _load_text(name):
 def _load_json(name):
     with open(os.path.join(FIXTURES, name)) as f:
         return json.load(f)
+
+
+def _parse_fixture(name):
+    return parse_forecast(_load_text(name), source_url=f"http://example/{name}")
 
 
 class ParseForecastTests(unittest.TestCase):
@@ -55,6 +63,80 @@ class ParseForecastTests(unittest.TestCase):
         self.assertEqual(self.forecast.planning_assumption_min_m3s, 10.5)
         self.assertEqual(self.forecast.planning_assumption_max_m3s, 30.0)
         self.assertIsNotNone(self.forecast.planning_assumption_raw)
+
+    def test_classifies_the_older_no_discharge_phrasing(self):
+        """ESB used "there will be no additional discharge necessary" up to at
+        least 2023 before switching to "no additional discharge will be
+        necessary". Both mean the same thing and must classify the same."""
+        forecast = _parse_fixture(
+            "shannon_hydro_forecast_no_discharge_older_phrasing_2020-10-27.txt"
+        )
+        self.assertEqual(forecast.discharge_classification, NO_DISCHARGE_EXPECTED)
+
+    def test_classifies_a_discharge_of_between_statement_as_discharging(self):
+        forecast = _parse_fixture(
+            "shannon_hydro_forecast_discharging_of_between_2020-11-09.txt"
+        )
+        self.assertEqual(forecast.discharge_classification, DISCHARGE_EXPECTED)
+
+    def test_classifies_a_discharge_ranging_between_statement_as_discharging(self):
+        forecast = _parse_fixture(
+            "shannon_hydro_forecast_discharging_ranging_between_2022-11-03.txt"
+        )
+        self.assertEqual(forecast.discharge_classification, DISCHARGE_EXPECTED)
+
+    def test_classifies_a_descending_discharge_range_as_discharging(self):
+        forecast = _parse_fixture(
+            "shannon_hydro_forecast_discharging_descending_range_2024-02-24.txt"
+        )
+        self.assertEqual(forecast.discharge_classification, DISCHARGE_EXPECTED)
+
+    def test_extracts_the_expected_discharge_range(self):
+        forecast = _parse_fixture(
+            "shannon_hydro_forecast_discharging_of_between_2020-11-09.txt"
+        )
+        self.assertEqual(forecast.expected_discharge_min_m3s, 55.0)
+        self.assertEqual(forecast.expected_discharge_max_m3s, 95.0)
+
+    def test_extracts_the_range_when_the_unit_trails_the_second_number(self):
+        forecast = _parse_fixture(
+            "shannon_hydro_forecast_discharging_ranging_between_2022-11-03.txt"
+        )
+        self.assertEqual(forecast.expected_discharge_min_m3s, 55.0)
+        self.assertEqual(forecast.expected_discharge_max_m3s, 170.0)
+
+    def test_a_descending_range_is_normalised_to_min_and_max(self):
+        """ESB writes a falling discharge as "between 95 and 55m3/s". The
+        direction stays readable in the raw statement; the numeric fields are
+        ordered so min is always the smaller."""
+        forecast = _parse_fixture(
+            "shannon_hydro_forecast_discharging_descending_range_2024-02-24.txt"
+        )
+        self.assertEqual(forecast.expected_discharge_min_m3s, 55.0)
+        self.assertEqual(forecast.expected_discharge_max_m3s, 95.0)
+
+    def test_no_discharge_forecast_has_no_discharge_range(self):
+        self.assertIsNone(self.forecast.expected_discharge_min_m3s)
+        self.assertIsNone(self.forecast.expected_discharge_max_m3s)
+
+    def test_a_past_discharge_sentence_does_not_make_the_day_discharging(self):
+        """The 2017-11-02 forecast opens with "Additional discharge of 50m3/s
+        at Parteen Weir ceased as of this morning." before expecting none. The
+        past fact must not be read as a live discharge."""
+        forecast = _parse_fixture(
+            "shannon_hydro_forecast_discharge_ceased_then_none_2017-11-02.txt"
+        )
+        self.assertEqual(forecast.discharge_classification, NO_DISCHARGE_EXPECTED)
+        self.assertIsNone(forecast.expected_discharge_min_m3s)
+        self.assertIn("ceased as of this morning", forecast.discharge_statement_raw)
+
+    def test_extracts_date_of_prediction_without_a_weekday(self):
+        """ESB wrote "Date of Prediction: 27 October 2020" before switching to
+        the "Friday 16 January 2026" form."""
+        forecast = _parse_fixture(
+            "shannon_hydro_forecast_no_discharge_older_phrasing_2020-10-27.txt"
+        )
+        self.assertEqual(forecast.date_of_prediction, date(2020, 10, 27))
 
     def test_unrecognised_wording_is_never_guessed(self):
         forecast = parse_forecast(
