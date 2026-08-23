@@ -16,6 +16,9 @@ first raised and who suggested it.
 | 5 | **As a** coach, **I want** the minimum number of committed athletes required to vary by the type/size of boat going out, **so that** session viability reflects the specific boat rather than a single fixed number. | 2026-06-19 | Marcus |
 | 6 | **As a** coach, **I want** to manage and confirm athlete attendance for rowing events/regattas (which is heavily affected by weather), **so that** I can plan event participation despite changing conditions. | 2026-06-19 | Marcus |
 | 7 | **As an** assistant coach, **I want** to step in and cover a session when the lead coach is unavailable, **so that** sessions aren't lost when a coach is away or missing. | 2026-06-19 | Claude (from context Marcus raised) |
+| 8 | **As a** coach, **I want** to attach a short note (max 256 characters) when sending a proposal — via a "Send with note" option on the Send proposal button — **so that** I can tell athletes things like "focusing on technique today, pack a jacket for the stationary drills". | 2026-08-23 | Marcus |
+| 9 | **As a** new user, **I want** the tide and weather figures to link to their sources the way the water-release figure does, **so that** every number on a day card is verifiable, not just the ESB one. | 2026-08-23 | Marcus |
+| 10 | **As a** coach, **I want** to choose which of a day's two daylight high tides a session is proposed for, **so that** the proposed time matches a real rowable window (today `sendProposal` is pinned to a single mock tide). | 2026-08-23 | Marcus |
 
 ---
 
