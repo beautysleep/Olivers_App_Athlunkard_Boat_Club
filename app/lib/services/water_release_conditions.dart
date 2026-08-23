@@ -4,12 +4,13 @@
 /// weather_conditions.dart).
 library;
 
-/// The only two classifications the backend fetcher can produce (see
-/// `functions/water_release/models.py`) — the one Parteen Weir discharge
-/// phrasing ESB has ever been observed to publish is [kNoDischargeExpected];
-/// anything else, including a real "discharging" statement (never captured),
-/// is [kUnparsed] — never guessed as either safe or dangerous.
+/// The three classifications the backend fetcher can produce (see
+/// `functions/water_release/models.py`). [kNoDischargeExpected] and
+/// [kDischargeExpected] each cover several real ESB phrasings; [kUnparsed] is
+/// wording ESB has never been observed to use, and is never guessed as either
+/// safe or dangerous.
 const String kNoDischargeExpected = 'no_discharge_expected';
+const String kDischargeExpected = 'discharge_expected';
 const String kUnparsed = 'unparsed';
 
 /// Live water-release status, read from `water_release_status/current`.
@@ -17,12 +18,35 @@ class LiveWaterRelease {
   const LiveWaterRelease({
     required this.classification,
     required this.statementRaw,
+    this.expectedMinM3s,
+    this.expectedMaxM3s,
   });
 
-  final String classification; // kNoDischargeExpected | kUnparsed
+  // kNoDischargeExpected | kDischargeExpected | kUnparsed
+  final String classification;
   final String statementRaw;
 
+  /// The discharge range ESB expects, when discharging. ESB does not always
+  /// state one in a form we can read, so this is absent even for some
+  /// [kDischargeExpected] days — the classification alone decides the override.
+  final double? expectedMinM3s;
+  final double? expectedMaxM3s;
+
   bool get isClear => classification == kNoDischargeExpected;
+
+  /// Water is being released upstream: the hard override, no rowing.
+  bool get isDischarging => classification == kDischargeExpected;
+
+  /// The range formatted for display ("55–170"), or null if ESB gave none.
+  String? get expectedRangeM3s {
+    final min = expectedMinM3s;
+    final max = expectedMaxM3s;
+    if (min == null || max == null) return null;
+    return '${_trim(min)}–${_trim(max)}';
+  }
+
+  static String _trim(double value) =>
+      value == value.roundToDouble() ? '${value.round()}' : '$value';
 }
 
 /// Builds [LiveWaterRelease] from the Firestore document, or null when
@@ -36,5 +60,7 @@ LiveWaterRelease? liveWaterReleaseFromDoc(Map<String, dynamic>? doc) {
   return LiveWaterRelease(
     classification: classification,
     statementRaw: (forecast['discharge_statement_raw'] as String?) ?? '',
+    expectedMinM3s: (forecast['expected_discharge_min_m3s'] as num?)?.toDouble(),
+    expectedMaxM3s: (forecast['expected_discharge_max_m3s'] as num?)?.toDouble(),
   );
 }

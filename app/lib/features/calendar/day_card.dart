@@ -341,11 +341,11 @@ class _DayCardState extends State<DayCard> {
     );
   }
 
-  /// Water release (ESB Parteen Weir) — live when available: green "Clear"
-  /// when the fetcher recognised the one discharge-statement phrasing ever
-  /// observed, amber "Unknown" when it didn't (the classifier never guesses
-  /// a "discharging" state from unseen wording — see
-  /// functions/water_release/README.md). Otherwise the mock override.
+  /// Water release (ESB Parteen Weir) — live when available: red "YES — no
+  /// row" when ESB expects a discharge (the hard override), green "Clear" when
+  /// it expects none, amber "Unknown" when the wording matched neither and so
+  /// was never guessed either way (see functions/water_release/README.md).
+  /// Otherwise the mock override.
   Widget _waterReleaseRow(DayConditions day) {
     final w = widget.liveWaterRelease;
     if (w == null) {
@@ -356,6 +356,17 @@ class _DayCardState extends State<DayCard> {
         status: day.waterReleaseActive
             ? MetricStatus.danger
             : MetricStatus.normal,
+      );
+    }
+    if (w.isDischarging) {
+      final range = w.expectedRangeM3s;
+      return _metric(
+        Icons.dangerous,
+        'Water release',
+        range == null
+            ? 'YES — no row (ESB)'
+            : 'YES — no row · $range m³/s (ESB)',
+        status: MetricStatus.danger,
       );
     }
     if (w.isClear) {

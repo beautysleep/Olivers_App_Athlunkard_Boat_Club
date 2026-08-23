@@ -27,9 +27,10 @@ either — `esbhydro.ie` serves plain HTTP only):
   `01-Shannon-Hydro-Forecast.pdf` carries a prose ~5-day forecast; Parteen Weir
   is the last weir before the club's launch point, so its discharge is the
   dominant indicator. Discharging ⇒ no rowing. In practice this is fragile
-  prose-parsing — only one phrasing has ever been observed, so the fetcher can
-  only assert "no discharge expected" or "unparsed," never "discharging"; see
-  `water_release/README.md`.
+  prose-parsing — ESB words the statement five different ways across the
+  fifteen real forecasts captured so far (2017–2026, via the Internet Archive),
+  all covered; unrecognised wording is classified "unparsed" rather than
+  guessed as clear. See `water_release/README.md`.
 - **Secondary signal — total Ardnacrusha flow.** `07-Total-Ardnacrusha-Flow.pdf`;
   below roughly 300 m³/s is fine. Corroborating, not deciding. Turned out to be
   a clean structured table, not prose.
