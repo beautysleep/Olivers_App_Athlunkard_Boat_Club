@@ -1,0 +1,16 @@
+requests>=2.31,<3
+# IANA tz database so ZoneInfo("Europe/Dublin") works even in minimal containers
+# without system zoneinfo (e.g. Cloud Functions).
+tzdata>=2024.1
+# No stdlib PDF parser exists. pdfplumber (MIT) chosen over pypdf for its
+# extract_tables() API, which suits the clean tabular structure of the flow
+# PDFs (07/08) — approved dependency, see AGENTS.md / Engineering_Guardrails.md.
+# Pulls in pdfminer.six (pure Python), Pillow, and pypdfium2 as prebuilt-wheel
+# transitive deps — no compiler needed, but heavier than requests/tzdata alone.
+pdfplumber>=0.11,<1
+# Firestore access from the Cloud Function — no stdlib equivalent; official
+# Google client (Apache-2.0). Same approved dependency as the tide/weather
+# services.
+google-cloud-firestore>=2.16,<3
+# Note: functions-framework is NOT pinned here — the Cloud Functions Python
+# runtime provides it. Install it in a local venv only for local testing.

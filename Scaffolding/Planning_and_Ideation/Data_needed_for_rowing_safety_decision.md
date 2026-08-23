@@ -57,6 +57,23 @@ Two documents matter, in priority order:
    conditions. This forecast looks ahead roughly **5 days**. We must parse the PDF
    text to extract the Parteen Weir discharge statement and store it.
 
+   **Wording is not stable.** ESB overwrites this PDF in place, so the live URL
+   only shows today's wording. Fifteen real forecasts have been captured (the
+   live one plus fourteen Internet Archive snapshots spanning 2017–2026), and
+   across them ESB words the statement **five** ways — two meaning "clear" and
+   three announcing a discharge, e.g.:
+
+   > *"It is expected that a discharge ranging between 55 and 170m3/s will be
+   > necessary at Parteen Weir over the next 5 days based on current weather
+   > forecast."*
+
+   The unit attaches to either number, the range is sometimes written
+   descending ("95 and 55m3/s"), and one forecast opens with a *past* fact
+   ("Additional discharge of 50m3/s at Parteen Weir ceased as of this morning.")
+   that must not be read as a live discharge. All five are covered; anything
+   else is classified `unparsed` and never guessed as clear. See
+   `functions/water_release/README.md`.
+
 2. **Total Ardnacrusha flow — a secondary, corroborating signal.**
    `07-Total-Ardnacrusha-Flow.pdf`
    (e.g. <http://www.esbhydro.ie/Shannon/07-Total-Ardnacrusha-Flow.pdf>) gives
@@ -65,8 +82,19 @@ Two documents matter, in priority order:
    identical** to the Parteen signal — treat it as supporting evidence, not the
    deciding factor.
 
+> **Found while building this (2026-08-09):** a third relevant PDF,
+> `08-Total-Parteen-Weir-Flow.pdf`
+> (<http://www.esbhydro.ie/Shannon/08-Total-Parteen-Weir-Flow.pdf>), not
+> mentioned above — a direct current numeric flow reading **at Parteen Weir
+> itself**, in the same clean table shape as #07 (both turned out to be
+> structured tables, not prose, despite this document assuming otherwise). It's
+> arguably a more robust signal than #1's prose forecast, since it's a direct
+> reading at the exact location that matters rather than a parsed sentence —
+> worth weighing against the "primary/secondary" designation above once real
+> data accumulates. The fetcher captures all three.
+
 > For the initial prototype, capture the rest of the information in these PDFs as
-> well — not just the two values above — since it is cheap to store and may prove
+> well — not just the values above — since it is cheap to store and may prove
 > useful once we see real data.
 
 ### B. Daylight (hard override)
@@ -182,5 +210,8 @@ hourly resolution once they enter the 48 h horizon.
 - Specific weather, tide, and sunrise/sunset API providers and their limits.
 - Numeric thresholds for each metric, per the table above (and confirm the
   ~300 m³/s Ardnacrusha-flow rule of thumb with the coaches).
-- Stability of the ESB PDF layout (filenames, wording of the Parteen forecast
-  sentence) to make text parsing robust — and a fallback if the wording changes.
+- ~~Stability of the ESB PDF layout (filenames, wording of the Parteen forecast
+  sentence)~~ — **answered:** the wording is *not* stable; five phrasings across
+  2017–2026 are covered, and unrecognised wording degrades to `unparsed` (never
+  a false "clear"), with a live canary test that fails when ESB introduces a
+  sixth.

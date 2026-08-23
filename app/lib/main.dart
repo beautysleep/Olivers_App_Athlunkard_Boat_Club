@@ -6,6 +6,7 @@ import 'features/home/role_home.dart';
 import 'services/app_scope.dart';
 import 'services/app_state.dart';
 import 'services/firestore_tide_repository.dart';
+import 'services/firestore_water_release_repository.dart';
 import 'services/firestore_weather_repository.dart';
 import 'services/mock_club_repository.dart';
 
@@ -23,11 +24,13 @@ class AthlunkardBoatClubApp extends StatefulWidget {
 }
 
 class _AthlunkardBoatClubAppState extends State<AthlunkardBoatClubApp> {
-  // App-wide state on mock data, with live tide + weather overlaid from Firestore.
+  // App-wide state on mock data, with live tide + weather + water release
+  // overlaid from Firestore.
   final AppState _appState = AppState(
     MockClubRepository(),
     tideRepository: FirestoreTideRepository(),
     weatherRepository: FirestoreWeatherRepository(),
+    waterReleaseRepository: FirestoreWaterReleaseRepository(),
   );
 
   @override
@@ -35,6 +38,7 @@ class _AthlunkardBoatClubAppState extends State<AthlunkardBoatClubApp> {
     super.initState();
     _appState.loadLiveTides(); // async + failure-tolerant
     _appState.loadLiveWeather(); // async + failure-tolerant
+    _appState.loadLiveWaterRelease(); // async + failure-tolerant
   }
 
   @override
@@ -49,10 +53,7 @@ class _AthlunkardBoatClubAppState extends State<AthlunkardBoatClubApp> {
       appState: _appState,
       child: MaterialApp(
         title: 'Athlunkard Boat Club',
-        theme: ThemeData(
-          colorSchemeSeed: Colors.blue,
-          useMaterial3: true,
-        ),
+        theme: ThemeData(colorSchemeSeed: Colors.blue, useMaterial3: true),
         home: const _AuthGate(),
       ),
     );

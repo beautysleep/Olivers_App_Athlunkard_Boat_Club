@@ -1,11 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/day_conditions.dart';
 import '../../models/session.dart';
 import '../../models/user_profile.dart';
 import '../../services/tide_windows.dart';
+import '../../services/water_release_conditions.dart';
 import '../../services/weather_conditions.dart';
 import '../../shared/condition_style.dart';
 import '../../shared/formatting.dart';
@@ -13,6 +15,13 @@ import '../../shared/formatting.dart';
 /// 1 knot = 1.852 km/h — for showing mock wind (stored in knots) in km/h, the
 /// unit the live data and the row/no-row thresholds use.
 const double _knotsToKmh = 1.852;
+
+/// A metric row's visual treatment. [unknown] is distinct from [danger]: it
+/// means live data arrived but couldn't be classified (e.g. the water-release
+/// PDF's discharge sentence didn't match the one phrasing ever observed) — a
+/// real gap to flag, not a confirmed override, so it must not read the same
+/// as [danger].
+enum MetricStatus { normal, live, danger, unknown }
 
 /// A calendar day as a flip card: the colour-coded front shows the rating; tap
 /// to flip and reveal the metrics behind the call (plus the coach's actions).
@@ -28,6 +37,7 @@ class DayCard extends StatefulWidget {
     required this.onOpenSession,
     this.offerableHighTides,
     this.liveWeather,
+    this.liveWaterRelease,
   });
 
   final DayConditions day;
@@ -40,6 +50,9 @@ class DayCard extends StatefulWidget {
 
   /// Live daily weather (km/h wind, mm rain) for this day, or null → show mock.
   final LiveWeather? liveWeather;
+
+  /// Live water-release status (global, not per-day), or null → show mock.
+  final LiveWaterRelease? liveWaterRelease;
   final bool unavailable;
   final UserRole role;
   final VoidCallback onSendProposal;
@@ -94,14 +107,15 @@ class _DayCardState extends State<DayCard> {
     );
   }
 
+  /// 300 logical px on a ~360px-wide phone deliberately shows about 1.2 cards
+  /// at a time. Fitting two cards meant every live value ellipsised away, and
+  /// while the club is still learning to trust the automated call, showing the
+  /// evidence in full matters more than showing more days at once.
   Widget _shell({required Widget child}) => SizedBox(
-        width: 180,
-        height: 320,
-        child: Card(
-          clipBehavior: Clip.antiAlias,
-          child: child,
-        ),
-      );
+    width: 300,
+    height: 320,
+    child: Card(clipBehavior: Clip.antiAlias, child: child),
+  );
 
   Widget _front(BuildContext context) {
     final style = conditionStyle(widget.day.conditions);
@@ -148,15 +162,20 @@ class _DayCardState extends State<DayCard> {
                   const Spacer(),
                   Row(
                     children: [
-                      Icon(Icons.flip_to_back,
-                          size: 14, color: Colors.grey.shade500),
+                      Icon(
+                        Icons.flip_to_back,
+                        size: 14,
+                        color: Colors.grey.shade500,
+                      ),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
                           'Tap for detail',
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                              fontSize: 12, color: Colors.grey.shade600),
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                       ),
                     ],
@@ -173,7 +192,7 @@ class _DayCardState extends State<DayCard> {
   Widget _back(BuildContext context) {
     final day = widget.day;
     return _shell(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,20 +205,112 @@ class _DayCardState extends State<DayCard> {
             ..._highTideRows(day),
             _windRow(day),
             _rainRow(day),
+            _waterReleaseRow(day),
             _metric(
-              Icons.dangerous,
-              'Water release',
-              day.waterReleaseActive ? 'YES — no row' : 'None',
-              danger: day.waterReleaseActive,
+              Icons.wb_sunny,
+              'Daylight',
+              '${formatTime(day.sunrise)}–${formatTime(day.sunset)}',
             ),
-            _metric(Icons.wb_sunny, 'Daylight',
-                '${formatTime(day.sunrise)}–${formatTime(day.sunset)}'),
-            const Spacer(),
+            const SizedBox(height: 16),
             ..._actions(context),
+            ..._additionalInformation(),
           ],
         ),
       ),
     );
+  }
+
+  /// Sources behind the numbers above, placed below the actions so it never
+  /// competes with them — the coach scrolls to it only when they want to check.
+  /// Shows ESB's own sentence verbatim plus a link to the document it came
+  /// from: a new user's first question is "where did that come from?", and
+  /// they should be able to go and look rather than take the app's word.
+  List<Widget> _additionalInformation() {
+    final w = widget.liveWaterRelease;
+    if (w == null) return const [];
+    return [
+      const SizedBox(height: 20),
+      const Divider(height: 1),
+      const SizedBox(height: 10),
+      Text(
+        'Additional information',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: Colors.grey.shade700,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        'Water release',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade600,
+        ),
+      ),
+      if (w.statementRaw.isNotEmpty) ...[
+        const SizedBox(height: 4),
+        Text(
+          '“${w.statementRaw}”',
+          style: TextStyle(
+            fontSize: 11,
+            height: 1.35,
+            fontStyle: FontStyle.italic,
+            color: Colors.grey.shade800,
+          ),
+        ),
+      ],
+      const SizedBox(height: 6),
+      _sourceLink('ESB Shannon Hydro Forecast (PDF)', w.sourceUrl),
+    ];
+  }
+
+  /// A source as a tappable link. Opens in the external browser rather than an
+  /// in-app view: esbhydro.ie is plain HTTP with no HTTPS listener, which
+  /// Android's default cleartext policy blocks in a webview.
+  Widget _sourceLink(String label, String? url) {
+    if (url == null) {
+      return Text(
+        label,
+        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+      );
+    }
+    return InkWell(
+      onTap: () => _openSource(url),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            const Icon(Icons.open_in_new, size: 13, color: Color(0xFF1565C0)),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF1565C0),
+                  decoration: TextDecoration.underline,
+                  decorationColor: Color(0xFF1565C0),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSource(String url) async {
+    final opened = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open $url')),
+      );
+    }
   }
 
   List<Widget> _actions(BuildContext context) {
@@ -218,8 +329,10 @@ class _DayCardState extends State<DayCard> {
     if (widget.role == UserRole.coach) {
       if (widget.unavailable) {
         return [
-          Text("You're marked unavailable",
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+          Text(
+            "You're marked unavailable",
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
         ];
       }
       if (widget.day.conditions == Conditions.red) {
@@ -266,14 +379,20 @@ class _DayCardState extends State<DayCard> {
     final offer = widget.offerableHighTides;
     if (offer == null) {
       return [
-        _metric(Icons.waves, 'High tide',
-            '${formatTime(day.highTide)} · ${day.highTideHeightMetres}m'),
+        _metric(
+          Icons.waves,
+          'High tide',
+          '${formatTime(day.highTide)} · ${day.highTideHeightMetres}m',
+        ),
       ];
     }
     if (offer.isEmpty) {
       return [
-        _metric(Icons.waves, 'High tide',
-            'none in daylight ≥${kMinRowableHighTideMetres}m'),
+        _metric(
+          Icons.waves,
+          'High tide',
+          'none in daylight ≥${kMinRowableHighTideMetres}m',
+        ),
       ];
     }
     return [
@@ -282,8 +401,8 @@ class _DayCardState extends State<DayCard> {
           Icons.waves,
           offer.length > 1 ? 'High tide ${i + 1}' : 'High tide',
           '${formatTime(offer[i].time)} · '
-              '${offer[i].heightMetres.toStringAsFixed(1)}m',
-          live: true,
+          '${offer[i].heightMetres.toStringAsFixed(1)}m',
+          status: MetricStatus.live,
         ),
     ];
   }
@@ -293,10 +412,18 @@ class _DayCardState extends State<DayCard> {
   Widget _windRow(DayConditions day) {
     final w = widget.liveWeather;
     if (w == null) {
-      return _metric(Icons.air, 'Wind',
-          '${(day.windKnots * _knotsToKmh).round()} km/h');
+      return _metric(
+        Icons.air,
+        'Wind',
+        '${(day.windKnots * _knotsToKmh).round()} km/h',
+      );
     }
-    return _metric(Icons.air, 'Wind', '${w.windKmh.round()} km/h', live: true);
+    return _metric(
+      Icons.air,
+      'Wind',
+      '${w.windKmh.round()} km/h',
+      status: MetricStatus.live,
+    );
   }
 
   /// Rainfall in mm — live when available (green dot), else the mock value.
@@ -306,47 +433,110 @@ class _DayCardState extends State<DayCard> {
       return _metric(Icons.water_drop, 'Rain', '${day.rainfallMm} mm');
     }
     return _metric(
-        Icons.water_drop, 'Rain', '${w.rainMm.toStringAsFixed(1)} mm',
-        live: true);
+      Icons.water_drop,
+      'Rain',
+      '${w.rainMm.toStringAsFixed(1)} mm',
+      status: MetricStatus.live,
+    );
   }
 
-  Widget _metric(IconData icon, String label, String value,
-      {bool danger = false, bool live = false}) {
+  /// Water release (ESB Parteen Weir) — live when available: red when ESB
+  /// expects a discharge (the hard override), green when it expects none,
+  /// amber when the wording matched neither and so was never guessed either
+  /// way (see functions/water_release/README.md). The wording itself lives on
+  /// LiveWaterRelease.summaryLabel. Otherwise the mock override.
+  Widget _waterReleaseRow(DayConditions day) {
+    final w = widget.liveWaterRelease;
+    if (w == null) {
+      return _metric(
+        Icons.dangerous,
+        'Water release',
+        day.waterReleaseActive ? 'YES — no row' : 'None',
+        status: day.waterReleaseActive
+            ? MetricStatus.danger
+            : MetricStatus.normal,
+      );
+    }
+    return _metric(
+      Icons.dangerous,
+      'Water release',
+      w.summaryLabel,
+      status: switch (w) {
+        _ when w.isDischarging => MetricStatus.danger,
+        _ when w.isClear => MetricStatus.live,
+        _ => MetricStatus.unknown,
+      },
+    );
+  }
+
+  Widget _metric(
+    IconData icon,
+    String label,
+    String value, {
+    MetricStatus status = MetricStatus.normal,
+  }) {
     const liveGreen = Color(0xFF2E7D32);
-    final valueColor =
-        live ? liveGreen : (danger ? const Color(0xFFC62828) : Colors.grey.shade800);
-    final iconColor = danger ? const Color(0xFFC62828) : Colors.grey.shade800;
+    const dangerRed = Color(0xFFC62828);
+    const unknownAmber = Color(0xFFEF6C00);
+    final valueColor = switch (status) {
+      MetricStatus.live => liveGreen,
+      MetricStatus.danger => dangerRed,
+      MetricStatus.unknown => unknownAmber,
+      MetricStatus.normal => Colors.grey.shade800,
+    };
+    final iconColor = status == MetricStatus.danger
+        ? dangerRed
+        : Colors.grey.shade800;
+    final showDot =
+        status == MetricStatus.live || status == MetricStatus.unknown;
+    final dotColor = status == MetricStatus.live ? liveGreen : unknownAmber;
+    final dotMessage = status == MetricStatus.live
+        ? 'Live data'
+        : 'Live data — unparsed, check ESB';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
           Icon(icon, size: 16, color: iconColor),
           const SizedBox(width: 6),
-          Expanded(
-            child: Text(label,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12)),
+          // Loose fit, and a smaller share than the value: the label is a
+          // fixed short word but the value carries live data that must not be
+          // ellipsised away (a truncated "No row · 55–170 m³/s" loses the
+          // number entirely). Expanded here would tightly claim half the row.
+          Flexible(
+            flex: 2,
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12),
+            ),
           ),
           const SizedBox(width: 6),
-          if (live) ...[
+          if (showDot) ...[
             Tooltip(
-              message: 'Live data',
+              message: dotMessage,
               child: Container(
                 width: 6,
                 height: 6,
-                decoration: const BoxDecoration(
-                    color: liveGreen, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
             const SizedBox(width: 4),
           ],
           Flexible(
+            flex: 3,
             child: Text(
               value,
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600, color: valueColor),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: valueColor,
+              ),
             ),
           ),
         ],

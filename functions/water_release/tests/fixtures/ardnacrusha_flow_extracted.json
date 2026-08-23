@@ -1,0 +1,159 @@
+{
+  "current": {
+    "timestamp": "09-Aug-26 09:00:00",
+    "value": "36",
+    "units": "cubic metres per second"
+  },
+  "readings": [
+    {
+      "timestamp": "09-Aug-26 09:00:00",
+      "value": "36",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "08-Aug-26 09:00:00",
+      "value": "37",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "07-Aug-26 09:00:00",
+      "value": "57",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "06-Aug-26 09:00:00",
+      "value": "87",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "05-Aug-26 09:00:00",
+      "value": "142",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "04-Aug-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "03-Aug-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "02-Aug-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "01-Aug-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "31-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "30-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "29-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "28-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "27-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "26-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "25-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "24-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "23-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "22-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "21-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "20-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "19-Jul-26 09:00:00",
+      "value": "0",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "18-Jul-26 09:00:00",
+      "value": "18",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "17-Jul-26 09:00:00",
+      "value": "19",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "16-Jul-26 09:00:00",
+      "value": "34",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "15-Jul-26 09:00:00",
+      "value": "33",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "14-Jul-26 09:00:00",
+      "value": "39",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "13-Jul-26 09:00:00",
+      "value": "41",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "12-Jul-26 09:00:00",
+      "value": "48",
+      "units": "cubic metres per second"
+    },
+    {
+      "timestamp": "11-Jul-26 09:00:00",
+      "value": "85",
+      "units": "cubic metres per second"
+    }
+  ]
+}
