@@ -20,6 +20,7 @@ class LiveWaterRelease {
     required this.statementRaw,
     this.expectedMinM3s,
     this.expectedMaxM3s,
+    this.sourceUrl,
   });
 
   // kNoDischargeExpected | kDischargeExpected | kUnparsed
@@ -32,6 +33,11 @@ class LiveWaterRelease {
   final double? expectedMinM3s;
   final double? expectedMaxM3s;
 
+  /// The ESB document this judgement was read from, so the app can offer the
+  /// coach a way to go and check it. Written by the fetcher; null only if an
+  /// older document predates the field.
+  final String? sourceUrl;
+
   bool get isClear => classification == kNoDischargeExpected;
 
   /// Water is being released upstream: the hard override, no rowing.
@@ -43,6 +49,18 @@ class LiveWaterRelease {
     final max = expectedMaxM3s;
     if (min == null || max == null) return null;
     return '${_trim(min)}–${_trim(max)}';
+  }
+
+  /// What the day card shows for this metric. Deliberately terse: the card
+  /// row is narrow, and the label and colour already say "water release" and
+  /// "danger", so the value carries only the decision and the number — the
+  /// one thing the coach cannot infer from anywhere else.
+  String get summaryLabel {
+    if (isDischarging) {
+      final range = expectedRangeM3s;
+      return range == null ? 'No row' : 'No row \u00b7 $range m\u00b3/s';
+    }
+    return isClear ? 'Clear' : 'Unknown \u2014 check ESB';
   }
 
   static String _trim(double value) =>
@@ -62,5 +80,6 @@ LiveWaterRelease? liveWaterReleaseFromDoc(Map<String, dynamic>? doc) {
     statementRaw: (forecast['discharge_statement_raw'] as String?) ?? '',
     expectedMinM3s: (forecast['expected_discharge_min_m3s'] as num?)?.toDouble(),
     expectedMaxM3s: (forecast['expected_discharge_max_m3s'] as num?)?.toDouble(),
+    sourceUrl: forecast['source_url'] as String?,
   );
 }

@@ -19,6 +19,26 @@ void main() {
       expect(w.statementRaw, contains('no additional discharge'));
     });
 
+    test('carries the ESB source URL through so the coach can verify it', () {
+      final w = liveWaterReleaseFromDoc({
+        'parteen_forecast': {
+          'discharge_classification': kNoDischargeExpected,
+          'source_url':
+              'http://www.esbhydro.ie/Shannon/01-Shannon-Hydro-Forecast.pdf',
+        },
+      });
+      expect(w!.sourceUrl, contains('01-Shannon-Hydro-Forecast.pdf'));
+    });
+
+    test('a document with no source URL yields null, not a guessed one', () {
+      final w = liveWaterReleaseFromDoc({
+        'parteen_forecast': {
+          'discharge_classification': kNoDischargeExpected,
+        },
+      });
+      expect(w!.sourceUrl, isNull);
+    });
+
     test('maps a discharging forecast as a hard no-row, with its range', () {
       final w = liveWaterReleaseFromDoc({
         'parteen_forecast': {
@@ -95,6 +115,35 @@ void main() {
         'parteen_forecast': {'discharge_classification': kNoDischargeExpected},
       });
       expect(w!.statementRaw, '');
+    });
+  });
+
+  group('LiveWaterRelease.summaryLabel', () {
+    LiveWaterRelease build(String c, {double? min, double? max}) =>
+        LiveWaterRelease(
+          classification: c,
+          statementRaw: '',
+          expectedMinM3s: min,
+          expectedMaxM3s: max,
+        );
+
+    test('discharging reads as the action plus the range', () {
+      expect(
+        build(kDischargeExpected, min: 55, max: 170).summaryLabel,
+        'No row \u00b7 55\u2013170 m\u00b3/s',
+      );
+    });
+
+    test('discharging without a range still states the action', () {
+      expect(build(kDischargeExpected).summaryLabel, 'No row');
+    });
+
+    test('clear is stated plainly', () {
+      expect(build(kNoDischargeExpected).summaryLabel, 'Clear');
+    });
+
+    test('unparsed tells the coach to check the source themselves', () {
+      expect(build(kUnparsed).summaryLabel, 'Unknown \u2014 check ESB');
     });
   });
 }

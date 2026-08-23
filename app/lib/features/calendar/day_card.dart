@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/day_conditions.dart';
 import '../../models/session.dart';
@@ -106,8 +107,12 @@ class _DayCardState extends State<DayCard> {
     );
   }
 
+  /// 300 logical px on a ~360px-wide phone deliberately shows about 1.2 cards
+  /// at a time. Fitting two cards meant every live value ellipsised away, and
+  /// while the club is still learning to trust the automated call, showing the
+  /// evidence in full matters more than showing more days at once.
   Widget _shell({required Widget child}) => SizedBox(
-    width: 180,
+    width: 300,
     height: 320,
     child: Card(clipBehavior: Clip.antiAlias, child: child),
   );
@@ -187,7 +192,7 @@ class _DayCardState extends State<DayCard> {
   Widget _back(BuildContext context) {
     final day = widget.day;
     return _shell(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,12 +211,106 @@ class _DayCardState extends State<DayCard> {
               'Daylight',
               '${formatTime(day.sunrise)}–${formatTime(day.sunset)}',
             ),
-            const Spacer(),
+            const SizedBox(height: 16),
             ..._actions(context),
+            ..._additionalInformation(),
           ],
         ),
       ),
     );
+  }
+
+  /// Sources behind the numbers above, placed below the actions so it never
+  /// competes with them — the coach scrolls to it only when they want to check.
+  /// Shows ESB's own sentence verbatim plus a link to the document it came
+  /// from: a new user's first question is "where did that come from?", and
+  /// they should be able to go and look rather than take the app's word.
+  List<Widget> _additionalInformation() {
+    final w = widget.liveWaterRelease;
+    if (w == null) return const [];
+    return [
+      const SizedBox(height: 20),
+      const Divider(height: 1),
+      const SizedBox(height: 10),
+      Text(
+        'Additional information',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: Colors.grey.shade700,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        'Water release',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade600,
+        ),
+      ),
+      if (w.statementRaw.isNotEmpty) ...[
+        const SizedBox(height: 4),
+        Text(
+          '“${w.statementRaw}”',
+          style: TextStyle(
+            fontSize: 11,
+            height: 1.35,
+            fontStyle: FontStyle.italic,
+            color: Colors.grey.shade800,
+          ),
+        ),
+      ],
+      const SizedBox(height: 6),
+      _sourceLink('ESB Shannon Hydro Forecast (PDF)', w.sourceUrl),
+    ];
+  }
+
+  /// A source as a tappable link. Opens in the external browser rather than an
+  /// in-app view: esbhydro.ie is plain HTTP with no HTTPS listener, which
+  /// Android's default cleartext policy blocks in a webview.
+  Widget _sourceLink(String label, String? url) {
+    if (url == null) {
+      return Text(
+        label,
+        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+      );
+    }
+    return InkWell(
+      onTap: () => _openSource(url),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            const Icon(Icons.open_in_new, size: 13, color: Color(0xFF1565C0)),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF1565C0),
+                  decoration: TextDecoration.underline,
+                  decorationColor: Color(0xFF1565C0),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSource(String url) async {
+    final opened = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open $url')),
+      );
+    }
   }
 
   List<Widget> _actions(BuildContext context) {
@@ -341,11 +440,11 @@ class _DayCardState extends State<DayCard> {
     );
   }
 
-  /// Water release (ESB Parteen Weir) — live when available: red "YES — no
-  /// row" when ESB expects a discharge (the hard override), green "Clear" when
-  /// it expects none, amber "Unknown" when the wording matched neither and so
-  /// was never guessed either way (see functions/water_release/README.md).
-  /// Otherwise the mock override.
+  /// Water release (ESB Parteen Weir) — live when available: red when ESB
+  /// expects a discharge (the hard override), green when it expects none,
+  /// amber when the wording matched neither and so was never guessed either
+  /// way (see functions/water_release/README.md). The wording itself lives on
+  /// LiveWaterRelease.summaryLabel. Otherwise the mock override.
   Widget _waterReleaseRow(DayConditions day) {
     final w = widget.liveWaterRelease;
     if (w == null) {
@@ -358,30 +457,15 @@ class _DayCardState extends State<DayCard> {
             : MetricStatus.normal,
       );
     }
-    if (w.isDischarging) {
-      final range = w.expectedRangeM3s;
-      return _metric(
-        Icons.dangerous,
-        'Water release',
-        range == null
-            ? 'YES — no row (ESB)'
-            : 'YES — no row · $range m³/s (ESB)',
-        status: MetricStatus.danger,
-      );
-    }
-    if (w.isClear) {
-      return _metric(
-        Icons.dangerous,
-        'Water release',
-        'Clear (ESB)',
-        status: MetricStatus.live,
-      );
-    }
     return _metric(
       Icons.dangerous,
       'Water release',
-      'Unknown — check ESB',
-      status: MetricStatus.unknown,
+      w.summaryLabel,
+      status: switch (w) {
+        _ when w.isDischarging => MetricStatus.danger,
+        _ when w.isClear => MetricStatus.live,
+        _ => MetricStatus.unknown,
+      },
     );
   }
 
@@ -415,7 +499,12 @@ class _DayCardState extends State<DayCard> {
         children: [
           Icon(icon, size: 16, color: iconColor),
           const SizedBox(width: 6),
-          Expanded(
+          // Loose fit, and a smaller share than the value: the label is a
+          // fixed short word but the value carries live data that must not be
+          // ellipsised away (a truncated "No row · 55–170 m³/s" loses the
+          // number entirely). Expanded here would tightly claim half the row.
+          Flexible(
+            flex: 2,
             child: Text(
               label,
               overflow: TextOverflow.ellipsis,
@@ -438,6 +527,7 @@ class _DayCardState extends State<DayCard> {
             const SizedBox(width: 4),
           ],
           Flexible(
+            flex: 3,
             child: Text(
               value,
               textAlign: TextAlign.right,
