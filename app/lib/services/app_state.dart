@@ -11,6 +11,7 @@ import 'firestore_day_rating_repository.dart';
 import 'firestore_water_release_repository.dart';
 import 'firestore_weather_repository.dart';
 import 'day_ratings.dart';
+import 'member_directory.dart';
 import 'daylight_conditions.dart';
 import 'session_windows.dart';
 import 'tide_windows.dart';
@@ -24,6 +25,7 @@ class AppState extends ChangeNotifier {
     FirestoreWeatherRepository? weatherRepository,
     FirestoreWaterReleaseRepository? waterReleaseRepository,
     FirestoreDayRatingRepository? dayRatingRepository,
+    this.memberDirectory,
   }) : _liveDayRatingSource = dayRatingRepository,
        _liveTideSource = tideRepository,
        _liveWeatherSource = weatherRepository,
@@ -44,23 +46,72 @@ class AppState extends ChangeNotifier {
   final FirestoreDayRatingRepository? _liveDayRatingSource;
   Map<String, LiveDayRating> _liveDayRatings = {};
 
+  final MemberDirectory? memberDirectory;
+  List<UserProfile> _roster = const [];
+
+  /// Everyone in the club, for notifying athletes and showing who is going.
+  List<UserProfile> get roster => _roster;
+
   UserProfile? _currentUser;
   UserProfile? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
 
-  List<UserProfile> get accounts => _repository.accounts();
+  Future<SignInOutcome> login(String email, String password) =>
+      _adopt(() => _directory.signIn(email, password));
 
-  bool login(String email, String password) {
-    final user = _repository.authenticate(email, password);
-    if (user == null) return false;
-    _currentUser = user;
+  Future<SignInOutcome> signUp({
+    required String email,
+    required String password,
+    required String displayName,
+    required String inviteCode,
+    String? childId,
+  }) => _adopt(
+    () => _directory.signUp(
+      email: email,
+      password: password,
+      displayName: displayName,
+      inviteCode: inviteCode,
+      childId: childId,
+    ),
+  );
+
+  /// Only a success adopts the member: a refused code or password must not
+  /// leave a half-signed-in state behind it.
+  Future<SignInOutcome> _adopt(Future<SignInOutcome> Function() attempt) async {
+    final outcome = await attempt();
+    if (outcome != SignInOutcome.succeeded) return outcome;
+    _currentUser = await _directory.currentMember();
+    await loadRoster();
     notifyListeners();
-    return true;
+    return outcome;
   }
 
-  void logout() {
-    _currentUser = null;
+  /// Firebase keeps a member signed in between runs, so the app asks who that
+  /// is before showing a login screen they do not need.
+  Future<void> restoreSession() async {
+    _currentUser = await _directory.currentMember();
+    if (_currentUser != null) await loadRoster();
     notifyListeners();
+  }
+
+  Future<void> loadRoster() async {
+    _roster = await _directory.roster();
+    notifyListeners();
+  }
+
+  Future<void> logout() async {
+    await _directory.signOut();
+    _currentUser = null;
+    _roster = const [];
+    notifyListeners();
+  }
+
+  MemberDirectory get _directory {
+    final directory = memberDirectory;
+    if (directory == null) {
+      throw StateError('AppState was built without a MemberDirectory');
+    }
+    return directory;
   }
 
   List<DayConditions> upcomingDays() => _repository.upcomingDays();
@@ -163,7 +214,7 @@ class AppState extends ChangeNotifier {
   }
 
   List<UserProfile> get _allAthletes =>
-      _repository.accounts().where((a) => a.role == UserRole.athlete).toList();
+      _roster.where((member) => member.role == UserRole.athlete).toList();
 
   List<Session> sessionsForCurrentUser() {
     final user = _currentUser;
@@ -280,7 +331,7 @@ class AppState extends ChangeNotifier {
 
     // Notify the athlete's parent, if one is subscribed to them.
     if (accept && !alreadyIn) {
-      for (final account in _repository.accounts()) {
+      for (final account in _roster) {
         if (account.role == UserRole.parent && account.childId == athlete.id) {
           _notify(
             account.id,
