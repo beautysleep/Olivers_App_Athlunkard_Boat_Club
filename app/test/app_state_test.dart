@@ -38,10 +38,10 @@ void main() {
 
       final freeGreenDay = s.upcomingDays().firstWhere((d) =>
           d.conditions == Conditions.green &&
-          s.sessionForDate(d.date) == null);
+          s.sessionsForDate(d.date).isEmpty);
 
       s.sendProposal(freeGreenDay);
-      expect(s.sessionForDate(freeGreenDay.date), isNotNull);
+      expect(s.sessionsForDate(freeGreenDay.date), isNotEmpty);
     });
 
     test('a coach pivoting a session marks it as land training', () {

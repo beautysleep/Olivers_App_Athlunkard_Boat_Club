@@ -54,7 +54,8 @@ class CalendarScreen extends StatelessWidget {
               separatorBuilder: (_, _) => const SizedBox(width: 12),
               itemBuilder: (context, i) {
                 final day = days[i];
-                final session = appState.sessionForDate(day.date);
+                final sessions = appState.sessionsForDate(day.date);
+                final session = sessions.isEmpty ? null : sessions.first;
                 final isUnavailable = unavailable.contains(_dateOnly(day.date));
                 return DayCard(
                   day: day,

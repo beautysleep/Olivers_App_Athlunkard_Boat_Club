@@ -73,7 +73,7 @@ class AppState extends ChangeNotifier {
   // --- Reads ---------------------------------------------------------------
   List<DayConditions> upcomingDays() => _repo.upcomingDays();
   Set<DateTime> unavailableDays() => _repo.unavailableDays();
-  Session? sessionForDate(DateTime date) => _repo.sessionForDate(date);
+  List<Session> sessionsForDate(DateTime date) => _repo.sessionsForDate(date);
 
   // --- Live tide (Firestore) ----------------------------------------------
   /// Load live tide predictions from Firestore. Failure-tolerant: on any error

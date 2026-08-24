@@ -236,12 +236,12 @@ class MockClubRepository implements ClubRepository {
   List<Session> sessions() => List.unmodifiable(_sessions);
 
   @override
-  Session? sessionForDate(DateTime date) {
+  List<Session> sessionsForDate(DateTime date) {
     final target = _dateOnly(date);
-    for (final s in _sessions) {
-      if (_dateOnly(s.date) == target) return s;
-    }
-    return null;
+    return [
+      for (final s in _sessions)
+        if (_dateOnly(s.date) == target) s,
+    ];
   }
 
   @override
