@@ -11,6 +11,8 @@ SLOT_DURATION = timedelta(hours=1)
 DISCHARGE_EXPECTED = "discharge_expected"
 UNPARSED = "unparsed"
 
+CUMULATIVE_RAIN_HOURS = (24, 48, 72)
+
 GREEN = "green"
 AMBER = "amber"
 RED = "red"
