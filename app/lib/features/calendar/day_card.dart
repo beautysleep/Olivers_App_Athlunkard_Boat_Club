@@ -37,6 +37,7 @@ class DayCard extends StatefulWidget {
     required this.onMarkUnavailable,
     required this.onOpenSession,
     this.offerableSessions,
+    this.sessionsWithoutAWindow = const [],
     this.liveWeather,
     this.liveWaterRelease,
     this.liveDaylight,
@@ -50,6 +51,11 @@ class DayCard extends StatefulWidget {
   /// an empty list = live data but no rowable window that day. Either way there
   /// is no window to offer, so no proposal is possible.
   final List<HighTideSession>? offerableSessions;
+
+  /// Sessions already proposed for this day that no offerable window covers.
+  /// They keep their commitments and stay actionable, so the card shows them
+  /// even though it can no longer offer that time as a fresh proposal.
+  final List<Session> sessionsWithoutAWindow;
 
   /// Live daily weather (km/h wind, mm rain) for this day, or null → show mock.
   final LiveWeather? liveWeather;
@@ -75,8 +81,10 @@ class _DayCardState extends State<DayCard> {
   List<HighTideSession> get _windows =>
       widget.offerableSessions ?? const <HighTideSession>[];
 
-  List<Session> get _proposedSessions =>
-      [for (final window in _windows) ?window.session];
+  List<Session> get _proposedSessions => [
+    for (final window in _windows) ?window.session,
+    ...widget.sessionsWithoutAWindow,
+  ];
 
   String _statusBadge() {
     final sessions = _proposedSessions;
@@ -326,10 +334,12 @@ class _DayCardState extends State<DayCard> {
 
   List<Widget> _actions(BuildContext context) {
     final windows = _windows;
-    final nameWindowsByTime = windows.length > 1;
+    final stranded = widget.sessionsWithoutAWindow;
+    final nameWindowsByTime = windows.length + stranded.length > 1;
 
     final actions = <Widget>[
       for (final window in windows) ?_windowAction(window, nameWindowsByTime),
+      for (final session in stranded) _openSession(session, nameWindowsByTime),
     ];
     final dayAction = _dayAction(nothingOfferedForAWindow: actions.isEmpty);
     if (dayAction != null) actions.add(dayAction);
@@ -348,14 +358,7 @@ class _DayCardState extends State<DayCard> {
   Widget? _windowAction(HighTideSession window, bool nameWindowsByTime) {
     final time = formatTime(window.highTide.time);
     final session = window.session;
-    if (session != null) {
-      return _fullWidth(
-        FilledButton.tonal(
-          onPressed: () => widget.onOpenSession(session),
-          child: Text(nameWindowsByTime ? 'Open $time session' : 'Open session'),
-        ),
-      );
-    }
+    if (session != null) return _openSession(session, nameWindowsByTime);
     if (widget.role != UserRole.coach ||
         widget.unavailable ||
         widget.day.conditions == Conditions.red) {
@@ -368,6 +371,17 @@ class _DayCardState extends State<DayCard> {
       ),
     );
   }
+
+  Widget _openSession(Session session, bool nameWindowsByTime) => _fullWidth(
+    FilledButton.tonal(
+      onPressed: () => widget.onOpenSession(session),
+      child: Text(
+        nameWindowsByTime
+            ? 'Open ${formatTime(session.date)} session'
+            : 'Open session',
+      ),
+    ),
+  );
 
   /// The action that belongs to the whole day rather than to a window. The
   /// coach's own availability is one of these: it holds even on a day with no

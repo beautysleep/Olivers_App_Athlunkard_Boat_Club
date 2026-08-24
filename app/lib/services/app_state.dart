@@ -99,22 +99,31 @@ class AppState extends ChangeNotifier {
   /// forecast horizon (the UI then says so rather than inventing a window).
   LiveDaylight? liveDaylightFor(DateTime date) => _liveDaylight[_dateKey(date)];
 
-  /// Null when either input is missing — no live tide for the day, or no live
-  /// daylight to judge it against. Filtering real tides against mock daylight
-  /// would silently produce a wrong answer, so it is not done, and with no
-  /// window there is nothing to offer the coach.
-  List<HighTideSession>? offerableSessionsFor(DayConditions day) {
+  /// [DaySessions.offerableWindows] is null when either input is missing — no
+  /// live tide for the day, or no live daylight to judge it against. Filtering
+  /// real tides against mock daylight would silently produce a wrong answer, so
+  /// it is not done, and with no window there is nothing to offer the coach.
+  DaySessions daySessionsFor(DayConditions day) {
+    final sessionsThatDay = sessionsForDate(day.date);
     final highs = liveHighTidesFor(day.date);
-    if (highs.isEmpty) return null;
     final daylight = liveDaylightFor(day.date);
-    if (daylight == null) return null;
-    return sessionsByHighTide(
-      offerableHighTides(
-        highs,
-        sunrise: daylight.sunrise,
-        sunset: daylight.sunset,
+    if (highs.isEmpty || daylight == null) {
+      return (
+        offerableWindows: null,
+        sessionsWithoutAWindow: sessionsThatDay,
+      );
+    }
+    final offerable = offerableHighTides(
+      highs,
+      sunrise: daylight.sunrise,
+      sunset: daylight.sunset,
+    );
+    return (
+      offerableWindows: sessionsByHighTide(offerable, sessionsThatDay),
+      sessionsWithoutAWindow: sessionsWithoutAHighTide(
+        offerable,
+        sessionsThatDay,
       ),
-      sessionsForDate(day.date),
     );
   }
 

@@ -36,6 +36,20 @@ void main() {
       expect(byHighTide.map((w) => w.session), [null, proposed]);
     });
 
+    test('keeps a session whose window is no longer offered', () {
+      final stranded = _sessionAt(_highTide(19).time);
+
+      final orphaned = sessionsWithoutAHighTide([_highTide(7)], [stranded]);
+
+      expect(orphaned, [stranded]);
+    });
+
+    test('strands every session for a day with no live tide data at all', () {
+      final morning = _sessionAt(_highTide(7).time);
+
+      expect(sessionsWithoutAHighTide(const [], [morning]), [morning]);
+    });
+
     test('leaves a window unproposed when no session sits at its time', () {
       final morning = _highTide(7);
 

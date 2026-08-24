@@ -48,6 +48,7 @@ Widget _card(
   List<HighTideSession>? offerableSessions, {
   UserRole role = UserRole.coach,
   void Function(LiveHighTide)? onSendProposal,
+  List<Session> sessionsWithoutAWindow = const [],
 }) => MaterialApp(
   home: Scaffold(
     body: DayCard(
@@ -55,6 +56,7 @@ Widget _card(
       unavailable: false,
       role: role,
       offerableSessions: offerableSessions,
+      sessionsWithoutAWindow: sessionsWithoutAWindow,
       onSendProposal: onSendProposal ?? (_) {},
       onMarkUnavailable: () {},
       onOpenSession: (_) {},
@@ -107,6 +109,38 @@ void main() {
 
       expect(find.text('Open 07:15 session'), findsOneWidget);
       expect(find.text('Propose 19:40'), findsOneWidget);
+    });
+  });
+
+  group('a session the offerable windows no longer cover', () {
+    testWidgets('is still shown, alongside the windows that are offered', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _card(
+          sessionsByHighTide([_morning], const []),
+          sessionsWithoutAWindow: [_sessionAt(DateTime(2026, 8, 24, 16, 30))],
+        ),
+      );
+      await _flipToBack(tester);
+
+      expect(find.text('Open 16:30 session'), findsOneWidget);
+      expect(find.text('Propose 07:15'), findsOneWidget);
+    });
+
+    testWidgets('survives a day that has no live tide data at all', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _card(
+          null,
+          sessionsWithoutAWindow: [_sessionAt(DateTime(2026, 8, 24, 16, 30))],
+        ),
+      );
+      await _flipToBack(tester);
+
+      expect(find.text('Open session'), findsOneWidget);
+      expect(find.text('Mark unavailable'), findsNothing);
     });
   });
 

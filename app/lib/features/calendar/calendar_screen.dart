@@ -55,11 +55,13 @@ class CalendarScreen extends StatelessWidget {
               itemBuilder: (context, i) {
                 final day = days[i];
                 final isUnavailable = unavailable.contains(_dateOnly(day.date));
+                final daySessions = appState.daySessionsFor(day);
                 return DayCard(
                   day: day,
                   unavailable: isUnavailable,
                   role: user.role,
-                  offerableSessions: appState.offerableSessionsFor(day),
+                  offerableSessions: daySessions.offerableWindows,
+                  sessionsWithoutAWindow: daySessions.sessionsWithoutAWindow,
                   liveWeather: appState.liveWeatherFor(day.date),
                   liveWaterRelease: appState.liveWaterRelease,
                   liveDaylight: appState.liveDaylightFor(day.date),
