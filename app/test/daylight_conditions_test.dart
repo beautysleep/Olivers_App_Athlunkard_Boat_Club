@@ -10,8 +10,8 @@ void main() {
         'sunset': DateTime.utc(2026, 8, 24, 20, 45),
       });
       expect(d, isNotNull);
-      expect(d!.sunrise.isUtc, isFalse, reason: 'converted to local for display');
-      expect(d.sunset.difference(d.sunrise).inHours, 15);
+      expect(d!.localSunrise.isUtc, isFalse, reason: 'converted to local for display');
+      expect(d.localSunset.difference(d.localSunrise).inHours, 15);
     });
 
     test('null document returns null', () {

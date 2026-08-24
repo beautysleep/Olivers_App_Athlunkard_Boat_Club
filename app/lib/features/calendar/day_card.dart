@@ -540,7 +540,7 @@ class _DayCardState extends State<DayCard> {
     return _metric(
       Icons.wb_sunny,
       'Daylight',
-      '${formatTime(d.sunrise)}–${formatTime(d.sunset)}',
+      '${formatTime(d.localSunrise)}–${formatTime(d.localSunset)}',
       status: MetricStatus.live,
     );
   }

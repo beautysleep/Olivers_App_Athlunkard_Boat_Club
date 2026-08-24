@@ -1,35 +1,33 @@
-library;
-
-/// How long before high tide the crew must already be at the club to get on the
-/// water in time. It sets which half-hour mark the default meeting time lands
-/// on: 06:41 high tide becomes 06:00, not 06:30. Provisional — settle the real
-/// figure with the coaches alongside the other thresholds.
+/// Why an 06:41 high tide defaults to 06:00 and not 06:30: the crew must
+/// already be at the club this long beforehand to get on the water in time.
+/// Provisional — settle the real figure with the coaches.
 const kMinimumMinutesBeforeHighTide = 30;
 
-/// How many meeting times the coach chooses between. Each step back is another
-/// half hour on the water, so the choice is effectively session length.
+/// Each step back is another half hour on the water, so this is really how many
+/// session lengths the coach chooses between.
 const kMeetingTimeOptions = 3;
 
-/// Meeting times the coach can propose for a high tide, soonest first.
-///
-/// Rowing does not start at high water — the crew meets beforehand, and how far
-/// beforehand is the coach's call, so this offers the on-the-hour and
-/// on-the-half-hour marks rather than deciding for them.
+DateTime halfHourMarkAtOrBefore(DateTime time) => DateTime(
+  time.year,
+  time.month,
+  time.day,
+  time.hour,
+  time.minute >= 30 ? 30 : 0,
+);
+
+/// Rowing does not start at high water: the crew meets beforehand, and how far
+/// beforehand is the coach's call, not the tide's.
 List<DateTime> meetingTimesBefore(
   DateTime highTide, {
   int minimumMinutesBefore = kMinimumMinutesBeforeHighTide,
   int options = kMeetingTimeOptions,
 }) {
-  final latest = highTide.subtract(Duration(minutes: minimumMinutesBefore));
-  final onTheHalfHour = DateTime(
-    latest.year,
-    latest.month,
-    latest.day,
-    latest.hour,
-    latest.minute >= 30 ? 30 : 0,
+  final latestLaunchableTime = highTide.subtract(
+    Duration(minutes: minimumMinutesBefore),
   );
+  final soonest = halfHourMarkAtOrBefore(latestLaunchableTime);
   return [
     for (var step = 0; step < options; step++)
-      onTheHalfHour.subtract(Duration(minutes: 30 * step)),
+      soonest.subtract(Duration(minutes: 30 * step)),
   ];
 }

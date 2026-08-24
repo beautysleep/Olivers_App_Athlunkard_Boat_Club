@@ -13,14 +13,14 @@ const kDaylightEdgeOffsetMinutes = 0;
 
 List<LiveHighTide> offerableHighTides(
   List<LiveHighTide> highs, {
-  required DateTime sunrise,
-  required DateTime sunset,
+  required DateTime localSunrise,
+  required DateTime localSunset,
   double minimumHeightMetres = kMinimumRowableHighTideMetres,
   int daylightEdgeOffsetMinutes = kDaylightEdgeOffsetMinutes,
 }) {
   final edge = Duration(minutes: daylightEdgeOffsetMinutes);
-  final firstLight = sunrise.subtract(edge);
-  final lastLight = sunset.add(edge);
+  final firstLight = localSunrise.subtract(edge);
+  final lastLight = localSunset.add(edge);
   return [
     for (final high in highs)
       if (high.heightMetres >= minimumHeightMetres &&

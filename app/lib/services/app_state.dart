@@ -115,8 +115,8 @@ class AppState extends ChangeNotifier {
     }
     final offerable = offerableHighTides(
       highs,
-      sunrise: daylight.sunrise,
-      sunset: daylight.sunset,
+      localSunrise: daylight.localSunrise,
+      localSunset: daylight.localSunset,
     );
     return (
       offerableWindows: sessionsByHighTide(offerable, sessionsThatDay),

@@ -70,8 +70,8 @@ void main() {
       await tester.pumpWidget(
         _card(
           daylight: LiveDaylight(
-            sunrise: DateTime(2026, 8, 24, 6, 15),
-            sunset: DateTime(2026, 8, 24, 20, 10),
+            localSunrise: DateTime(2026, 8, 24, 6, 15),
+            localSunset: DateTime(2026, 8, 24, 20, 10),
           ),
         ),
       );

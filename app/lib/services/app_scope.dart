@@ -1,6 +1,5 @@
-/// Exposes [AppState] to the widget tree and rebuilds dependents when it
-/// changes — a tiny dependency-free alternative to provider/riverpod for the
-/// demo. Any widget calling `AppScope.of(context)` rebuilds on notifyListeners.
+/// A dependency-free stand-in for provider/riverpod, kept because the demo does
+/// not need either.
 library;
 
 import 'package:flutter/widgets.dart';
