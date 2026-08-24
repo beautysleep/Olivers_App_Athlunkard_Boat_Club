@@ -1,21 +1,34 @@
 from __future__ import annotations
 
+import math
 from datetime import datetime, timedelta
 
 from models import (
     AMBER,
     DISCHARGE_EXPECTED,
     GREEN,
+    MINIMUM_ROWABLE_HEIGHT_METRES,
     RED,
-    ROWABLE_EITHER_SIDE_OF_HIGH_TIDE,
+    SLOT_DURATION,
     UNPARSED,
     DailyWeather,
     DayRating,
     Thresholds,
     WeatherSlot,
 )
+from tide_curve import TideExtreme, rowable_interval
 
 MINIMUM_SESSION_LENGTH = timedelta(hours=1, minutes=30)
+
+APPROXIMATED_FORECAST = (
+    "Approximated from the whole-day forecast. This sharpens closer to the "
+    "time, once hourly detail reaches this day."
+)
+UNCONFIRMED_WEIR = (
+    "ESB's wording did not match any phrasing on record, so the weir state is "
+    "unconfirmed — check the forecast before committing."
+)
+BIG_BOATS_ONLY = "Above the all-boats limit — bigger boats and experienced crews only."
 
 
 def longest_calm_interval(
@@ -41,8 +54,9 @@ def longest_calm_interval(
             continue
         if run:
             candidate = (run[0].starts_at, run[-1].ends_at)
-            if candidate[1] - candidate[0] >= minimum_length and (
-                longest is None or candidate[1] - candidate[0] > longest[1] - longest[0]
+            length = candidate[1] - candidate[0]
+            if length >= minimum_length and (
+                longest is None or length > longest[1] - longest[0]
             ):
                 longest = candidate
             run = []
@@ -50,39 +64,83 @@ def longest_calm_interval(
     return longest
 
 
-def _rowable_interval(high_tide: datetime) -> tuple[datetime, datetime]:
+def _overlap(
+    first: tuple[datetime, datetime], second: tuple[datetime, datetime]
+) -> tuple[datetime, datetime] | None:
+    start = max(first[0], second[0])
+    end = min(first[1], second[1])
+    return (start, end) if end > start else None
+
+
+def _slots_across(
+    interval: tuple[datetime, datetime],
+    hourly: list[WeatherSlot],
+    daily: DailyWeather | None,
+) -> tuple[list[WeatherSlot], bool]:
+    """Hourly detail where it reaches, otherwise the day's single figure spread
+    flat across the interval. Flat is enough to answer whether the day is
+    rowable; what it cannot do is tell one hour from another."""
+    start, end = interval
+    within = [s for s in hourly if s.starts_at >= start and s.ends_at <= end]
+    if within:
+        return within, False
+    if daily is None:
+        return [], False
+    hours = max(math.floor((end - start) / SLOT_DURATION), 0)
     return (
-        high_tide - ROWABLE_EITHER_SIDE_OF_HIGH_TIDE,
-        high_tide + ROWABLE_EITHER_SIDE_OF_HIGH_TIDE,
+        [
+            WeatherSlot(
+                starts_at=start + index * SLOT_DURATION,
+                wind_speed_ms=daily.wind_speed_ms,
+                rain_mm=daily.rain_mm,
+            )
+            for index in range(hours)
+        ],
+        True,
     )
 
 
-def _slots_within(
-    slots: list[WeatherSlot], interval: tuple[datetime, datetime]
-) -> list[WeatherSlot]:
-    start, end = interval
-    return [s for s in slots if s.starts_at >= start and s.ends_at <= end]
+def rowable_windows_in_daylight(
+    high_tides: list[datetime],
+    extremes: list[TideExtreme],
+    daylight: tuple[datetime, datetime] | None,
+    *,
+    minimum_height_metres: float = MINIMUM_ROWABLE_HEIGHT_METRES,
+) -> list[tuple[datetime, datetime]]:
+    windows = []
+    for high_tide in sorted(high_tides):
+        interval = rowable_interval(
+            high_tide, extremes, minimum_height_metres=minimum_height_metres
+        )
+        if interval is None:
+            continue
+        if daylight is not None:
+            interval = _overlap(interval, daylight)
+        if interval is not None:
+            windows.append(interval)
+    return windows
 
 
 def rate_day(
     *,
     high_tides: list[datetime],
+    extremes: list[TideExtreme],
+    daylight: tuple[datetime, datetime] | None = None,
     slots: list[WeatherSlot],
+    daily: DailyWeather | None = None,
     water_release_classification: str,
     cumulative_rain_mm: dict[int, float],
-    daily: DailyWeather | None = None,
     thresholds: Thresholds = Thresholds(),
 ) -> DayRating:
-    reasons: list[str] = []
-
     if water_release_classification == DISCHARGE_EXPECTED:
         return DayRating(
             RED, None, ["ESB expects a discharge at Parteen Weir — no rowing."]
         )
 
-    if not high_tides:
+    windows = rowable_windows_in_daylight(high_tides, extremes, daylight)
+    if not windows:
         return DayRating(
-            RED, None, ["No high tide falls in daylight at a rowable height."]
+            RED, None, ["No high tide holds a rowable depth in daylight today."]
         )
 
     for hours, limit in sorted(thresholds.cumulative_rain_mm.items()):
@@ -97,76 +155,34 @@ def rate_day(
                 ],
             )
 
+    reasons: list[str] = []
     if water_release_classification == UNPARSED:
-        reasons.append(
-            "ESB's wording did not match any phrasing on record, so the weir "
-            "state is unconfirmed — check the forecast before committing."
-        )
+        reasons.append(UNCONFIRMED_WEIR)
 
-    if not slots:
-        return _rate_from_daily_figure(daily, thresholds, reasons)
-
-    window = None
-    for high_tide in sorted(high_tides):
-        window = longest_calm_interval(
-            _slots_within(slots, _rowable_interval(high_tide)),
-            max_wind_kmh=thresholds.wind_kmh_all_boats,
-            max_rain_mm=thresholds.rain_mm_all_boats,
-        )
-        if window is not None:
-            break
-
-    if window is not None:
-        rating = AMBER if reasons else GREEN
-        return DayRating(rating, window, reasons)
-
-    for high_tide in sorted(high_tides):
-        window = longest_calm_interval(
-            _slots_within(slots, _rowable_interval(high_tide)),
-            max_wind_kmh=thresholds.wind_kmh_big_boats,
-            max_rain_mm=thresholds.rain_mm_big_boats,
-        )
-        if window is not None:
-            reasons.append(
-                "Above the all-boats limit — bigger boats and experienced crews only."
-            )
-            return DayRating(AMBER, window, reasons)
-
-    reasons.append("No unbroken 1.5h stretch stays under the wind and rain limits.")
-    return DayRating(RED, None, reasons)
-
-
-def _rate_from_daily_figure(
-    daily: DailyWeather | None,
-    thresholds: Thresholds,
-    reasons: list[str],
-) -> DayRating:
-    """Beyond the hourly horizon a day has one wind and rain figure. That is
-    enough to rate it but not to name a session time: a window derived from a
-    daily average would read exactly like one derived from real hours."""
-    if daily is None:
+    if daily is None and not slots:
         return DayRating(None, None, [*reasons, "No forecast reaches this day yet."])
 
-    unconfirmed_weir = list(reasons)
-    reasons = [
-        *reasons,
-        "Hourly forecast does not reach this day, so no session time yet.",
-    ]
-
-    if (
-        daily.wind_speed_kmh <= thresholds.wind_kmh_all_boats
-        and daily.rain_mm <= thresholds.rain_mm_all_boats
+    for max_wind, max_rain, big_boats_only in (
+        (thresholds.wind_kmh_all_boats, thresholds.rain_mm_all_boats, False),
+        (thresholds.wind_kmh_big_boats, thresholds.rain_mm_big_boats, True),
     ):
-        return DayRating(AMBER if unconfirmed_weir else GREEN, None, reasons)
+        for interval in windows:
+            across, approximated = _slots_across(interval, slots, daily)
+            calm = longest_calm_interval(
+                across, max_wind_kmh=max_wind, max_rain_mm=max_rain
+            )
+            if calm is None:
+                continue
+            found = [*reasons]
+            if approximated:
+                found.append(APPROXIMATED_FORECAST)
+            if big_boats_only:
+                found.append(BIG_BOATS_ONLY)
+            rating = AMBER if (big_boats_only or reasons) else GREEN
+            return DayRating(rating, calm, found)
 
-    if (
-        daily.wind_speed_kmh <= thresholds.wind_kmh_big_boats
-        and daily.rain_mm <= thresholds.rain_mm_big_boats
-    ):
-        reasons.append(
-            "Above the all-boats limit — bigger boats and experienced crews only."
-        )
-        return DayRating(AMBER, None, reasons)
-
-    reasons.append("Forecast is over the wind or rain limit all day.")
-    return DayRating(RED, None, reasons)
+    return DayRating(
+        RED,
+        None,
+        [*reasons, "No unbroken 1.5h stretch stays under the wind and rain limits."],
+    )

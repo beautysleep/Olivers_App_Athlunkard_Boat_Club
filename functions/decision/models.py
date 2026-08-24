@@ -15,10 +15,10 @@ GREEN = "green"
 AMBER = "amber"
 RED = "red"
 
-# How far either side of high water the club can launch and land. Invented to
-# make the windowing possible at all — the tide store holds high-water instants,
-# not intervals — so this is provisional and belongs to the coaches.
-ROWABLE_EITHER_SIDE_OF_HIGH_TIDE = timedelta(hours=2)
+# The depth the club needs under them. How long a tide holds it is not a fixed
+# span: it falls out of the curve between the neighbouring lows, so a bigger
+# tide stays rowable for longer. Provisional, and the coaches' number.
+MINIMUM_ROWABLE_HEIGHT_METRES = 4.2
 
 
 @dataclass(frozen=True)
