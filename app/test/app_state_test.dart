@@ -5,6 +5,17 @@ import 'package:athlunkard_boat_club/models/session.dart';
 import 'package:athlunkard_boat_club/models/user_profile.dart';
 import 'package:athlunkard_boat_club/services/app_state.dart';
 import 'package:athlunkard_boat_club/services/mock_club_repository.dart';
+import 'package:athlunkard_boat_club/services/tide_windows.dart';
+
+LiveHighTide _highTideOn(
+  DateTime date, {
+  required int hour,
+  required int minute,
+  double heightMetres = 4.6,
+}) => LiveHighTide(
+  time: DateTime(date.year, date.month, date.day, hour, minute),
+  heightMetres: heightMetres,
+);
 
 void main() {
   group('AppState use-cases', () {
@@ -32,16 +43,42 @@ void main() {
       );
     });
 
-    test('a coach proposing creates a session for that day', () {
+    test('a coach proposes a session at the high tide they chose', () {
       final s = AppState(MockClubRepository());
       s.login('coach@athlunkard.club', demoPassword);
 
-      final freeGreenDay = s.upcomingDays().firstWhere((d) =>
+      final day = s.upcomingDays().firstWhere((d) =>
           d.conditions == Conditions.green &&
           s.sessionsForDate(d.date).isEmpty);
+      final window = _highTideOn(day.date, hour: 7, minute: 15);
 
-      s.sendProposal(freeGreenDay);
-      expect(s.sessionsForDate(freeGreenDay.date), isNotEmpty);
+      s.sendProposal(day, window);
+
+      expect(s.sessionsForDate(day.date).single.date, window.time);
+    });
+
+    test("a day's two high tides become two independent sessions", () {
+      final s = AppState(MockClubRepository());
+      s.login('coach@athlunkard.club', demoPassword);
+
+      final day = s.upcomingDays().firstWhere((d) =>
+          d.conditions == Conditions.green &&
+          s.sessionsForDate(d.date).isEmpty);
+      final morning = _highTideOn(day.date, hour: 7, minute: 15);
+      final evening = _highTideOn(day.date, hour: 19, minute: 40);
+
+      s.sendProposal(day, morning);
+      s.sendProposal(day, evening);
+
+      final sessions = s.sessionsForDate(day.date);
+      expect(sessions.map((x) => x.date), [morning.time, evening.time]);
+
+      s.logout();
+      s.login('saoirse@athlunkard.club', demoPassword);
+      s.respondToProposal(sessions.first, accept: true);
+
+      expect(sessions.first.committedCount, 1);
+      expect(sessions.last.committedCount, 0);
     });
 
     test('a coach pivoting a session marks it as land training', () {

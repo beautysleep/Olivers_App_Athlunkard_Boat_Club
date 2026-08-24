@@ -54,35 +54,30 @@ class CalendarScreen extends StatelessWidget {
               separatorBuilder: (_, _) => const SizedBox(width: 12),
               itemBuilder: (context, i) {
                 final day = days[i];
-                final sessions = appState.sessionsForDate(day.date);
-                final session = sessions.isEmpty ? null : sessions.first;
                 final isUnavailable = unavailable.contains(_dateOnly(day.date));
                 return DayCard(
                   day: day,
-                  session: session,
                   unavailable: isUnavailable,
                   role: user.role,
-                  offerableHighTides: appState.offerableHighTidesFor(day),
+                  offerableSessions: appState.offerableSessionsFor(day),
                   liveWeather: appState.liveWeatherFor(day.date),
                   liveWaterRelease: appState.liveWaterRelease,
                   liveDaylight: appState.liveDaylightFor(day.date),
-                  onSendProposal: () {
-                    appState.sendProposal(day);
+                  onSendProposal: (highTide) {
+                    appState.sendProposal(day, highTide);
                     _snack(context, 'Proposal sent to all athletes.');
                   },
                   onMarkUnavailable: () {
                     appState.markUnavailable(day);
                     _snack(context, "Marked unavailable — won't be proposed.");
                   },
-                  onOpenSession: () {
-                    if (session != null) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              SessionDetailScreen(sessionId: session.id),
-                        ),
-                      );
-                    }
+                  onOpenSession: (session) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            SessionDetailScreen(sessionId: session.id),
+                      ),
+                    );
                   },
                 );
               },

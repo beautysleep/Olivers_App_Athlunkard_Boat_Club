@@ -26,12 +26,11 @@ Widget _card({LiveWeather? weather, LiveDaylight? daylight}) => MaterialApp(
   home: Scaffold(
     body: DayCard(
       day: _day,
-      session: null,
       unavailable: false,
       role: UserRole.coach,
-      onSendProposal: () {},
+      onSendProposal: (_) {},
       onMarkUnavailable: () {},
-      onOpenSession: () {},
+      onOpenSession: (_) {},
       liveWeather: weather,
       liveDaylight: daylight,
     ),
