@@ -43,18 +43,40 @@ void main() {
       );
     });
 
-    test('a coach proposes a session at the high tide they chose', () {
+    test('a coach proposes a meeting time, not the high tide itself', () {
       final s = AppState(MockClubRepository());
       s.login('coach@athlunkard.club', demoPassword);
 
       final day = s.upcomingDays().firstWhere((d) =>
           d.conditions == Conditions.green &&
           s.sessionsForDate(d.date).isEmpty);
-      final window = _highTideOn(day.date, hour: 7, minute: 15);
+      final window = _highTideOn(day.date, hour: 6, minute: 41);
+      final meetAt = DateTime(day.date.year, day.date.month, day.date.day, 6);
 
-      s.sendProposal(day, window);
+      s.sendProposal(day, window, meetingTime: meetAt);
 
-      expect(s.sessionsForDate(day.date).single.date, window.time);
+      final session = s.sessionsForDate(day.date).single;
+      expect(session.date, meetAt);
+      expect(session.highTideTime, window.time);
+    });
+
+    test('tells athletes when to meet, not when the tide is high', () {
+      final s = AppState(MockClubRepository());
+      s.login('coach@athlunkard.club', demoPassword);
+
+      final day = s.upcomingDays().firstWhere((d) =>
+          d.conditions == Conditions.green &&
+          s.sessionsForDate(d.date).isEmpty);
+      final window = _highTideOn(day.date, hour: 6, minute: 41);
+      final meetAt = DateTime(day.date.year, day.date.month, day.date.day, 6);
+
+      s.sendProposal(day, window, meetingTime: meetAt);
+
+      s.logout();
+      s.login('saoirse@athlunkard.club', demoPassword);
+      final invitation = s.notifications().first.body;
+      expect(invitation, contains('06:00'));
+      expect(invitation, isNot(contains('06:41')));
     });
 
     test("a day's two high tides become two independent sessions", () {
@@ -67,8 +89,8 @@ void main() {
       final morning = _highTideOn(day.date, hour: 7, minute: 15);
       final evening = _highTideOn(day.date, hour: 19, minute: 40);
 
-      s.sendProposal(day, morning);
-      s.sendProposal(day, evening);
+      s.sendProposal(day, morning, meetingTime: morning.time);
+      s.sendProposal(day, evening, meetingTime: evening.time);
 
       final sessions = s.sessionsForDate(day.date);
       expect(sessions.map((x) => x.date), [morning.time, evening.time]);

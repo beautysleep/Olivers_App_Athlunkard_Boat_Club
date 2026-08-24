@@ -28,7 +28,7 @@ Widget _card({LiveWeather? weather, LiveDaylight? daylight}) => MaterialApp(
       day: _day,
       unavailable: false,
       role: UserRole.coach,
-      onSendProposal: (_) {},
+      onSendProposal: (_, _) {},
       onMarkUnavailable: () {},
       onOpenSession: (_) {},
       liveWeather: weather,

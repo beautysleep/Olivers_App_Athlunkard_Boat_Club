@@ -211,13 +211,17 @@ class AppState extends ChangeNotifier {
   int get notificationCount => notifications().length;
 
   // --- Coach actions -------------------------------------------------------
-  void sendProposal(DayConditions day, LiveHighTide highTide) {
+  void sendProposal(
+    DayConditions day,
+    LiveHighTide highTide, {
+    required DateTime meetingTime,
+  }) {
     final coach = _currentUser;
     if (coach == null || coach.role != UserRole.coach) return;
 
     final session = Session(
       id: _repo.nextId('s'),
-      date: highTide.time,
+      date: meetingTime,
       highTideTime: highTide.time,
       conditions: day.conditions,
       coach: coach,

@@ -7,6 +7,7 @@ import '../../models/day_conditions.dart';
 import '../../models/session.dart';
 import '../../models/user_profile.dart';
 import '../../services/daylight_conditions.dart';
+import '../../services/meeting_times.dart';
 import '../../services/session_windows.dart';
 import '../../services/tide_windows.dart';
 import '../../services/water_release_conditions.dart';
@@ -67,7 +68,8 @@ class DayCard extends StatefulWidget {
   final LiveDaylight? liveDaylight;
   final bool unavailable;
   final UserRole role;
-  final void Function(LiveHighTide highTide) onSendProposal;
+  final void Function(LiveHighTide highTide, DateTime meetingTime)
+  onSendProposal;
   final VoidCallback onMarkUnavailable;
   final void Function(Session session) onOpenSession;
 
@@ -366,10 +368,52 @@ class _DayCardState extends State<DayCard> {
     }
     return _fullWidth(
       FilledButton(
-        onPressed: () => widget.onSendProposal(window.highTide),
-        child: Text(nameWindowsByTime ? 'Propose $time' : 'Send proposal'),
+        onPressed: () => _chooseMeetingTime(window.highTide),
+        child: Text(
+          nameWindowsByTime ? 'Propose \u00b7 $time tide' : 'Send proposal',
+        ),
       ),
     );
+  }
+
+  /// Rowing does not start at high water — the crew meets beforehand, and how
+  /// long beforehand is the coach's judgement about the session they have in
+  /// mind, so the app offers the half-hour marks rather than deciding.
+  Future<void> _chooseMeetingTime(LiveHighTide highTide) async {
+    final chosen = await showModalBottomSheet<DateTime>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+              child: Text(
+                'Meet at',
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: Text(
+                'High tide ${formatTime(highTide.time)} \u00b7 '
+                'earlier means a longer session',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+            ),
+            for (final meetingTime in meetingTimesBefore(highTide.time))
+              ListTile(
+                leading: const Icon(Icons.schedule),
+                title: Text(formatTime(meetingTime)),
+                onTap: () => Navigator.of(sheetContext).pop(meetingTime),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (chosen != null) widget.onSendProposal(highTide, chosen);
   }
 
   Widget _openSession(Session session, bool nameWindowsByTime) => _fullWidth(

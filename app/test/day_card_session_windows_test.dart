@@ -48,7 +48,7 @@ Session _sessionAt(DateTime time) => Session(
 Widget _card(
   List<HighTideSession>? offerableSessions, {
   UserRole role = UserRole.coach,
-  void Function(LiveHighTide)? onSendProposal,
+  void Function(LiveHighTide, DateTime)? onSendProposal,
   List<Session> sessionsWithoutAWindow = const [],
 }) => MaterialApp(
   home: Scaffold(
@@ -58,7 +58,7 @@ Widget _card(
       role: role,
       offerableSessions: offerableSessions,
       sessionsWithoutAWindow: sessionsWithoutAWindow,
-      onSendProposal: onSendProposal ?? (_) {},
+      onSendProposal: onSendProposal ?? (_, _) {},
       onMarkUnavailable: () {},
       onOpenSession: (_) {},
     ),
@@ -80,22 +80,48 @@ void main() {
       );
       await _flipToBack(tester);
 
-      expect(find.text('Propose 07:15'), findsOneWidget);
-      expect(find.text('Propose 19:40'), findsOneWidget);
+      expect(find.text('Propose · 07:15 tide'), findsOneWidget);
+      expect(find.text('Propose · 19:40 tide'), findsOneWidget);
     });
 
-    testWidgets('proposes the window the coach actually tapped', (tester) async {
-      LiveHighTide? chosen;
+    testWidgets('asks when to meet rather than assuming the tide time', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _card(sessionsByHighTide([_morning, _evening], const [])),
+      );
+      await _flipToBack(tester);
+      await tester.tap(find.text('Propose · 07:15 tide'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('06:30'), findsOneWidget);
+      expect(find.text('06:00'), findsOneWidget);
+      expect(find.text('05:30'), findsOneWidget);
+      expect(find.text('07:15'), findsNothing);
+    });
+
+    testWidgets('proposes the window and meeting time the coach picked', (
+      tester,
+    ) async {
+      LiveHighTide? chosenWindow;
+      DateTime? chosenMeetingTime;
       await tester.pumpWidget(
         _card(
           sessionsByHighTide([_morning, _evening], const []),
-          onSendProposal: (highTide) => chosen = highTide,
+          onSendProposal: (highTide, meetingTime) {
+            chosenWindow = highTide;
+            chosenMeetingTime = meetingTime;
+          },
         ),
       );
       await _flipToBack(tester);
-      await tester.tap(find.text('Propose 19:40'));
+      await tester.tap(find.text('Propose · 19:40 tide'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('18:30'));
+      await tester.pumpAndSettle();
 
-      expect(chosen, _evening);
+      expect(chosenWindow, _evening);
+      expect(chosenMeetingTime, DateTime(2026, 8, 24, 18, 30));
     });
 
     testWidgets('keeps offering the free window once the other is proposed', (
@@ -109,7 +135,7 @@ void main() {
       await _flipToBack(tester);
 
       expect(find.text('Open 07:15 session'), findsOneWidget);
-      expect(find.text('Propose 19:40'), findsOneWidget);
+      expect(find.text('Propose · 19:40 tide'), findsOneWidget);
     });
   });
 
@@ -126,7 +152,7 @@ void main() {
       await _flipToBack(tester);
 
       expect(find.text('Open 16:30 session'), findsOneWidget);
-      expect(find.text('Propose 07:15'), findsOneWidget);
+      expect(find.text('Propose · 07:15 tide'), findsOneWidget);
     });
 
     testWidgets('survives a day that has no live tide data at all', (

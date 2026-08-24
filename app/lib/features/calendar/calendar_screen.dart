@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/session.dart';
 import '../../services/app_scope.dart';
+import '../../shared/formatting.dart';
 import '../sessions/session_detail_screen.dart';
 import 'day_card.dart';
 
@@ -65,9 +66,17 @@ class CalendarScreen extends StatelessWidget {
                   liveWeather: appState.liveWeatherFor(day.date),
                   liveWaterRelease: appState.liveWaterRelease,
                   liveDaylight: appState.liveDaylightFor(day.date),
-                  onSendProposal: (highTide) {
-                    appState.sendProposal(day, highTide);
-                    _snack(context, 'Proposal sent to all athletes.');
+                  onSendProposal: (highTide, meetingTime) {
+                    appState.sendProposal(
+                      day,
+                      highTide,
+                      meetingTime: meetingTime,
+                    );
+                    _snack(
+                      context,
+                      'Proposal sent \u2014 meet at '
+                      '${formatTime(meetingTime)}.',
+                    );
                   },
                   onMarkUnavailable: () {
                     appState.markUnavailable(day);
