@@ -1,11 +1,3 @@
-/// The application / use-case layer.
-///
-/// [AppState] holds the signed-in user and turns user intents (propose, commit,
-/// cancel) into data changes + the right notifications, then tells the UI to
-/// rebuild. It talks only to [ClubRepository], so swapping the data source
-/// doesn't touch any of this logic.
-library;
-
 import 'package:flutter/foundation.dart';
 
 import '../models/app_notification.dart';
@@ -25,41 +17,34 @@ import 'weather_conditions.dart';
 
 class AppState extends ChangeNotifier {
   AppState(
-    this._repo, {
+    this._repository, {
     FirestoreTideRepository? tideRepository,
     FirestoreWeatherRepository? weatherRepository,
     FirestoreWaterReleaseRepository? waterReleaseRepository,
-  }) : _tideRepo = tideRepository,
-       _weatherRepo = weatherRepository,
-       _waterReleaseRepo = waterReleaseRepository;
+  }) : _liveTideSource = tideRepository,
+       _liveWeatherSource = weatherRepository,
+       _liveWaterReleaseSource = waterReleaseRepository;
 
-  final ClubRepository _repo;
+  final ClubRepository _repository;
 
-  /// Optional live-tide source (Firestore). Null in tests → mock only.
-  final FirestoreTideRepository? _tideRepo;
+  final FirestoreTideRepository? _liveTideSource;
   Map<String, List<LiveHighTide>> _liveHighTides = {};
 
-  /// Optional live-weather source (Firestore). Null in tests → mock only.
-  final FirestoreWeatherRepository? _weatherRepo;
+  final FirestoreWeatherRepository? _liveWeatherSource;
   Map<String, LiveWeather> _liveWeather = {};
   Map<String, LiveDaylight> _liveDaylight = {};
 
-  /// Optional live-water-release source (Firestore). Null in tests → mock
-  /// only. Global, not per-day — unlike tide/weather there's a single current
-  /// status, not one value per calendar day.
-  final FirestoreWaterReleaseRepository? _waterReleaseRepo;
+  final FirestoreWaterReleaseRepository? _liveWaterReleaseSource;
   LiveWaterRelease? _liveWaterRelease;
 
   UserProfile? _currentUser;
   UserProfile? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
 
-  // --- Authentication ------------------------------------------------------
-  List<UserProfile> get accounts => _repo.accounts();
+  List<UserProfile> get accounts => _repository.accounts();
 
-  /// Returns true on success. The UI shows an error on false.
   bool login(String email, String password) {
-    final user = _repo.authenticate(email, password);
+    final user = _repository.authenticate(email, password);
     if (user == null) return false;
     _currentUser = user;
     notifyListeners();
@@ -71,38 +56,38 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- Reads ---------------------------------------------------------------
-  List<DayConditions> upcomingDays() => _repo.upcomingDays();
-  Set<DateTime> coachUnavailableDays() => _repo.coachUnavailableDays();
-  List<Session> sessionsForDate(DateTime date) => _repo.sessionsForDate(date);
+  List<DayConditions> upcomingDays() => _repository.upcomingDays();
+  Set<DateTime> coachUnavailableDays() => _repository.coachUnavailableDays();
+  List<Session> sessionsForDate(DateTime date) => _repository.sessionsForDate(date);
 
-  // --- Live tide (Firestore) ----------------------------------------------
-  /// Load live tide predictions from Firestore. Failure-tolerant: on any error
-  /// (e.g. Firebase unavailable in tests) it keeps whatever data we already
-  /// have, so the app still works on mock data.
-  Future<void> loadLiveTides() async {
-    final repo = _tideRepo;
-    if (repo == null) return;
+  /// Every live source is optional: without it the day card says "No data",
+  /// which must not become the whole app failing to start.
+  Future<void> _loadOptionalSource(Future<void> Function() load) async {
     try {
-      _liveHighTides = await repo.loadHighTides();
+      await load();
       notifyListeners();
     } catch (_) {
-      // Firestore not available — fall back to mock silently.
+      return;
     }
   }
 
-  /// Live high tides for [date] (all of them), or empty if none loaded.
+  Future<void> loadLiveTides() async {
+    final repository = _liveTideSource;
+    if (repository == null) return;
+    await _loadOptionalSource(() async {
+      _liveHighTides = await repository.loadHighTides();
+    });
+  }
+
   List<LiveHighTide> liveHighTidesFor(DateTime date) =>
       _liveHighTides[_dateKey(date)] ?? const [];
 
-  /// Live daylight for [date], or null when the day is beyond the weather
-  /// forecast horizon (the UI then says so rather than inventing a window).
+  /// Null beyond the weather forecast horizon, where the UI says so rather
+  /// than inventing a window.
   LiveDaylight? liveDaylightFor(DateTime date) => _liveDaylight[_dateKey(date)];
 
-  /// [DaySessions.offerableWindows] is null when either input is missing — no
-  /// live tide for the day, or no live daylight to judge it against. Filtering
-  /// real tides against mock daylight would silently produce a wrong answer, so
-  /// it is not done, and with no window there is nothing to offer the coach.
+  /// Offering no window is deliberate when either input is missing: judging
+  /// real tides against mock daylight would produce a confident wrong answer.
   DaySessions daySessionsFor(DayConditions day) {
     final sessionsThatDay = sessionsForDate(day.date);
     final highs = liveHighTidesFor(day.date);
@@ -127,42 +112,26 @@ class AppState extends ChangeNotifier {
     );
   }
 
-  // --- Live weather (Firestore) -------------------------------------------
-  /// Load live weather from Firestore. Failure-tolerant, like [loadLiveTides].
   Future<void> loadLiveWeather() async {
-    final repo = _weatherRepo;
-    if (repo == null) return;
-    try {
-      final forecasts = await repo.loadDailyForecasts();
+    final repository = _liveWeatherSource;
+    if (repository == null) return;
+    await _loadOptionalSource(() async {
+      final forecasts = await repository.loadDailyForecasts();
       _liveWeather = forecasts.weather;
       _liveDaylight = forecasts.daylight;
-      notifyListeners();
-    } catch (_) {
-      // Firestore not available — fall back to mock silently.
-    }
+    });
   }
 
-  /// Live daily weather for [date], or null if none loaded (UI falls back to
-  /// mock).
   LiveWeather? liveWeatherFor(DateTime date) => _liveWeather[_dateKey(date)];
 
-  // --- Live water release (Firestore) --------------------------------------
-  /// Load live water-release status from Firestore. Failure-tolerant, like
-  /// [loadLiveTides].
   Future<void> loadLiveWaterRelease() async {
-    final repo = _waterReleaseRepo;
-    if (repo == null) return;
-    try {
-      _liveWaterRelease = await repo.loadStatus();
-      notifyListeners();
-    } catch (_) {
-      // Firestore not available — fall back to mock silently.
-    }
+    final repository = _liveWaterReleaseSource;
+    if (repository == null) return;
+    await _loadOptionalSource(() async {
+      _liveWaterRelease = await repository.loadStatus();
+    });
   }
 
-  /// The current live water-release status, or null if none loaded (UI falls
-  /// back to mock). Global, not per-day — there's no lookup-by-date method
-  /// here, unlike [liveHighTidesFor]/[liveWeatherFor].
   LiveWaterRelease? get liveWaterRelease => _liveWaterRelease;
 
   String _dateKey(DateTime d) =>
@@ -170,27 +139,24 @@ class AppState extends ChangeNotifier {
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
-  /// Look up a single session by id (used by the detail screen so it always
-  /// reflects the latest state after a commit/cancel).
   Session? sessionById(String id) {
-    for (final s in _repo.sessions()) {
+    for (final s in _repository.sessions()) {
       if (s.id == id) return s;
     }
     return null;
   }
 
   List<UserProfile> get _allAthletes =>
-      _repo.accounts().where((a) => a.role == UserRole.athlete).toList();
+      _repository.accounts().where((a) => a.role == UserRole.athlete).toList();
 
-  /// Sessions relevant to the signed-in user, soonest first.
   List<Session> sessionsForCurrentUser() {
     final user = _currentUser;
     if (user == null) return const [];
-    final all = _repo.sessions().toList()
+    final all = _repository.sessions().toList()
       ..sort((a, b) => a.date.compareTo(b.date));
     switch (user.role) {
       case UserRole.coach:
-        return all; // the coach sees everything they run
+        return all;
       case UserRole.athlete:
         return all.where((s) => s.isCommitted(user)).toList();
       case UserRole.parent:
@@ -201,16 +167,14 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// Notifications for the signed-in user, newest first.
   List<AppNotification> notifications() {
     final user = _currentUser;
     if (user == null) return const [];
-    return _repo.notificationsForUser(user.id);
+    return _repository.notificationsForUser(user.id);
   }
 
   int get notificationCount => notifications().length;
 
-  // --- Coach actions -------------------------------------------------------
   void sendProposal(
     DayConditions day,
     LiveHighTide highTide, {
@@ -220,14 +184,14 @@ class AppState extends ChangeNotifier {
     if (coach == null || coach.role != UserRole.coach) return;
 
     final session = Session(
-      id: _repo.nextId('s'),
+      id: _repository.nextId('s'),
       date: meetingTime,
       highTideTime: highTide.localTime,
       conditions: day.conditions,
       coach: coach,
       committedAthletes: [],
     );
-    _repo.upsertSession(session);
+    _repository.upsertSession(session);
 
     for (final athlete in _allAthletes) {
       _notify(
@@ -245,7 +209,7 @@ class AppState extends ChangeNotifier {
   /// Coach marks themselves unavailable for [day], so it won't be proposed.
   void markCoachUnavailable(DayConditions day) {
     if (_currentUser?.role != UserRole.coach) return;
-    _repo.markCoachUnavailable(day.date);
+    _repository.markCoachUnavailable(day.date);
     notifyListeners();
   }
 
@@ -256,7 +220,7 @@ class AppState extends ChangeNotifier {
     session.lifecycle = pivotToLand
         ? SessionLifecycle.cancelledWeatherPivot
         : SessionLifecycle.cancelledOutright;
-    _repo.upsertSession(session);
+    _repository.upsertSession(session);
 
     final when = formatDayTime(session.date);
     for (final athlete in session.committedAthletes) {
@@ -296,11 +260,11 @@ class AppState extends ChangeNotifier {
     } else if (!accept && alreadyIn) {
       session.committedAthletes.removeWhere((a) => a.id == athlete.id);
     }
-    _repo.upsertSession(session);
+    _repository.upsertSession(session);
 
     // Notify the athlete's parent, if one is subscribed to them.
     if (accept && !alreadyIn) {
-      for (final account in _repo.accounts()) {
+      for (final account in _repository.accounts()) {
         if (account.role == UserRole.parent && account.childId == athlete.id) {
           _notify(
             account.id,
@@ -347,9 +311,9 @@ class AppState extends ChangeNotifier {
     String body, {
     String? sessionId,
   }) {
-    _repo.addNotification(
+    _repository.addNotification(
       AppNotification(
-        id: _repo.nextId('n'),
+        id: _repository.nextId('n'),
         recipientId: recipientId,
         type: type,
         title: title,
