@@ -1,9 +1,4 @@
-"""Fetch Athlunkard water-release status from ESB's Shannon hydrometric PDFs.
-
-Reusable entrypoint (`fetch_water_release_status`) plus a small CLI so we can
-prove the source before wiring it into Cloud Functions / Firestore.
-
-No API key needed — ESB publishes these as public PDFs over plain HTTP (no
+"""No API key needed — ESB publishes these as public PDFs over plain HTTP (no
 HTTPS listener on esbhydro.ie, confirmed).
 
 Run:

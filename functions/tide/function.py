@@ -1,9 +1,5 @@
-"""Cloud Function entry point: fetch Limerick Dock tides and store them.
-
-Triggered daily by Cloud Scheduler (HTTP). Reads the WorldTides key from an env
-var injected from Secret Manager, and writes one document per local day to the
-`tide_predictions` collection. All the non-trivial logic lives in the pure,
-unit-tested modules; this file is just the I/O wiring.
+"""Triggered daily over HTTP by Cloud Scheduler. The WorldTides key arrives in
+an environment variable injected from Secret Manager.
 """
 
 from __future__ import annotations

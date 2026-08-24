@@ -1,17 +1,11 @@
-"""Parse OpenWeather One Call 4.0 timeline responses into WeatherPoint objects.
-
-Pure (no HTTP/network): the client hands us an already-decoded payload, so this
-is unit-tested against captured real responses without a key.
-
-Handles both timeline shapes returned by `/data/4.0/onecall/timeline/...`:
-- hourly (`1h`): records carry `wind_gust` and `pop`; rain, when present, is the
-  object `{"1h": mm}`.
+"""Both timeline shapes returned by `/data/4.0/onecall/timeline/...`:
+- hourly (`1h`): records carry `wind_gust` and `pop`; rain, when present, is
+  the object `{"1h": mm}`.
 - daily (`1day`): records omit `wind_gust` and `pop`, and are the only ones
   carrying `sunrise`/`sunset`; rain, when present, is a plain number.
 
-Absent fields are represented honestly — gust/pop → None, rain → 0.0 — rather
-than invented, since OpenWeather omits `rain` entirely in dry periods and omits
-gust/pop from daily records.
+Absent fields are represented honestly — gust/pop as None, rain as 0.0 — rather
+than invented, since OpenWeather omits `rain` entirely in dry periods.
 """
 
 from __future__ import annotations

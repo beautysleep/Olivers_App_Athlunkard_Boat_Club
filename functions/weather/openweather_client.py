@@ -1,15 +1,10 @@
-"""Thin HTTP client for the OpenWeather One Call 4.0 timeline endpoints.
-
-Isolated from parsing so the rest of the service stays testable without the
-network or a key.
-
-Key-safety (One Call 4.0 embeds `appid` in the `prev`/`next` URLs it returns):
-- `prev`/`next` are dropped from every payload the moment it arrives, so they can
-  never be logged, stored, or paginated through.
-- Pagination is done by rebuilding the request from our own params (`start`), not
-  by following the returned URLs.
-- Errors reference the bare endpoint path only — never the query string that
-  carries the key.
+"""Key-safety, because One Call 4.0 embeds `appid` in the `prev`/`next` URLs it
+returns:
+- `prev`/`next` are dropped from every payload the moment it arrives, so they
+  can never be logged, stored, or paginated through.
+- Pagination rebuilds the request from our own params (`start`) rather than
+  following the returned URLs.
+- Errors reference the bare endpoint path only, never the query string.
 """
 
 from __future__ import annotations

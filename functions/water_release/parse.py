@@ -1,12 +1,3 @@
-"""Parse ESB hydrometric PDF text/tables into water-release domain types.
-
-Pure (no HTTP/PDF-library dependency): esbhydro_client.py hands us the
-already-extracted plain text (from the prose forecast PDF) or row dicts (from
-the flow-table PDFs), so this is unit-tested against captured real extracted
-content without a network call or pdfplumber. Mirrors the weather service's
-parse.py.
-"""
-
 from __future__ import annotations
 
 import re

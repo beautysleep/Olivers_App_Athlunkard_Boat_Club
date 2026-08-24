@@ -1,9 +1,5 @@
-"""Cloud Function entry point: fetch Athlunkard weather and store it.
-
-Triggered on a schedule (HTTP) by Cloud Scheduler. Reads the OpenWeather key from
-an env var injected from Secret Manager, and writes one document per local day to
-the `weather_forecasts` collection. All the non-trivial logic lives in the pure,
-unit-tested modules; this file is just the I/O wiring (mirrors the tide service).
+"""Triggered on a schedule over HTTP by Cloud Scheduler. The OpenWeather key
+arrives in an environment variable injected from Secret Manager.
 """
 
 from __future__ import annotations

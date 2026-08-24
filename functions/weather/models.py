@@ -1,10 +1,3 @@
-"""Domain types for the weather service.
-
-Kept free of any HTTP/library dependency so the document-building (and later the
-response parsing) can be unit-tested without a network call or an API key.
-Mirrors the tide service's models.py.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

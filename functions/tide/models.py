@@ -1,9 +1,3 @@
-"""Domain types for the tide service.
-
-Kept free of any HTTP/library dependency so the parsing and calibration logic
-can be unit-tested without a network call or an API key.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

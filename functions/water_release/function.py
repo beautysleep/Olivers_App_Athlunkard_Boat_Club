@@ -1,10 +1,6 @@
-"""Cloud Function entry point: fetch ESB water-release status and store it.
-
-Triggered on a schedule (HTTP) by Cloud Scheduler. No API key needed — these
-are public PDFs. Writes a single document to `water_release_status/current`,
-overwritten on every run (see firestore_docs.py for why there's no per-day
-accretion). All the non-trivial logic lives in the pure, unit-tested modules;
-this file is just the I/O wiring (mirrors the tide/weather services).
+"""Triggered on a schedule over HTTP by Cloud Scheduler. No API key needed —
+these are public PDFs. See firestore_docs.py for why the document is
+overwritten rather than accreted.
 """
 
 from __future__ import annotations

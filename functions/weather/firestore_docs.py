@@ -1,14 +1,8 @@
-"""Shape forecast points into per-day Firestore documents.
-
-Pure (no Firestore/network dependency) so it stays unit-testable; the actual
-write lives in function.py.
-
-One document per LOCAL (Europe/Dublin) day, keyed by the date string — so the app
-can read a calendar day directly. `daily` is that day's aggregate; `hourly` is
-the intraday series for days that fall within the API's hourly horizon (~48h),
-and is empty for days beyond it; `sunrise`/`sunset` are the day's daylight
-bounds, which OpenWeather returns only on daily records. Mirrors the tide
-service.
+"""One document per LOCAL (Europe/Dublin) day, keyed by the date string, so the
+app can read a calendar day directly. `daily` is that day's aggregate; `hourly`
+is the intraday series for days inside the API's ~48h hourly horizon and is
+empty beyond it; `sunrise`/`sunset` are day-level, which is the only place
+OpenWeather returns them.
 """
 
 from __future__ import annotations
