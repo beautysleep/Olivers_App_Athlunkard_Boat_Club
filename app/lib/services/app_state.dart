@@ -73,7 +73,7 @@ class AppState extends ChangeNotifier {
 
   // --- Reads ---------------------------------------------------------------
   List<DayConditions> upcomingDays() => _repo.upcomingDays();
-  Set<DateTime> unavailableDays() => _repo.unavailableDays();
+  Set<DateTime> coachUnavailableDays() => _repo.coachUnavailableDays();
   List<Session> sessionsForDate(DateTime date) => _repo.sessionsForDate(date);
 
   // --- Live tide (Firestore) ----------------------------------------------
@@ -243,9 +243,9 @@ class AppState extends ChangeNotifier {
   }
 
   /// Coach marks themselves unavailable for [day], so it won't be proposed.
-  void markUnavailable(DayConditions day) {
+  void markCoachUnavailable(DayConditions day) {
     if (_currentUser?.role != UserRole.coach) return;
-    _repo.markUnavailable(day.date);
+    _repo.markCoachUnavailable(day.date);
     notifyListeners();
   }
 

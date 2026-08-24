@@ -69,7 +69,7 @@ class LiveWaterRelease {
 
 /// Builds [LiveWaterRelease] from the Firestore document, or null when
 /// there's no usable classification (so the UI falls back to mock).
-LiveWaterRelease? liveWaterReleaseFromDoc(Map<String, dynamic>? doc) {
+LiveWaterRelease? liveWaterReleaseFromDocument(Map<String, dynamic>? doc) {
   if (doc == null) return null;
   final forecast = (doc['parteen_forecast'] as Map?)?.cast<String, dynamic>();
   if (forecast == null) return null;

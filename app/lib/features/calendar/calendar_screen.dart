@@ -25,7 +25,7 @@ class CalendarScreen extends StatelessWidget {
     final appState = AppScope.of(context);
     final user = appState.currentUser!;
     final days = appState.upcomingDays();
-    final unavailable = appState.unavailableDays();
+    final unavailable = appState.coachUnavailableDays();
 
     return SingleChildScrollView(
       child: Column(
@@ -79,7 +79,7 @@ class CalendarScreen extends StatelessWidget {
                     );
                   },
                   onMarkUnavailable: () {
-                    appState.markUnavailable(day);
+                    appState.markCoachUnavailable(day);
                     _snack(context, "Marked unavailable — won't be proposed.");
                   },
                   onOpenSession: (session) {

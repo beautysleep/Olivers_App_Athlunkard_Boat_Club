@@ -230,10 +230,10 @@ class MockClubRepository implements ClubRepository {
   List<DayConditions> upcomingDays() => List.unmodifiable(_days);
 
   @override
-  Set<DateTime> unavailableDays() => Set.unmodifiable(_unavailable);
+  Set<DateTime> coachUnavailableDays() => Set.unmodifiable(_unavailable);
 
   @override
-  void markUnavailable(DateTime date) => _unavailable.add(_dateOnly(date));
+  void markCoachUnavailable(DateTime date) => _unavailable.add(_dateOnly(date));
 
   @override
   List<Session> sessions() => List.unmodifiable(_sessions);
