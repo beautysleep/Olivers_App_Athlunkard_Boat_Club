@@ -58,6 +58,9 @@ locals {
     "eventarc.googleapis.com",
     "firebase.googleapis.com",
     "firebaserules.googleapis.com",
+    # Firebase Auth. Sessions are the first thing the *app* writes, and a
+    # Firestore rule can only authorise a write against an identity.
+    "identitytoolkit.googleapis.com",
   ]
 }
 
