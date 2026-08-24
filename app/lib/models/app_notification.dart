@@ -1,21 +1,12 @@
-/// An in-app notification. v1 has no real push yet (Firebase Cloud Messaging
-/// comes later), so notifications are modelled here and shown in an inbox.
+/// Push is not wired up yet, so notifications live here and surface in an
+/// in-app inbox instead.
 library;
 
 enum NotificationType {
-  /// Athlete: the coach has proposed a session you can attend.
   proposalReceived,
-
-  /// Athlete + coach: the session reached the minimum and is confirmed.
   sessionConfirmed,
-
-  /// Athlete: a session you committed to was cancelled outright.
   sessionCancelled,
-
-  /// Athlete: a session was moved off the water to land training.
   sessionPivoted,
-
-  /// Parent: your child has committed to a session (plan transport).
   childCommitted,
 }
 
@@ -31,15 +22,10 @@ class AppNotification {
   });
 
   final String id;
-
-  /// The user who should see this notification.
   final String recipientId;
-
   final NotificationType type;
   final String title;
   final String body;
   final DateTime createdAt;
-
-  /// The session this is about, if any (lets the inbox deep-link to it).
   final String? sessionId;
 }
