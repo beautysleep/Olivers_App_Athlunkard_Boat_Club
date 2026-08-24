@@ -50,7 +50,7 @@ def test_a_confirmed_discharge_forces_red_through_perfect_weather():
     verdict = rate(classification=DISCHARGE_EXPECTED)
 
     assert verdict.rating == RED
-    assert verdict.window is None
+    assert verdict.windows == []
     assert any("discharg" in reason.lower() for reason in verdict.reasons)
 
 
@@ -65,7 +65,7 @@ def test_no_rowable_high_tide_leaves_nothing_to_rate():
     verdict = rate(high_tides=[])
 
     assert verdict.rating == RED
-    assert verdict.window is None
+    assert verdict.windows == []
 
 
 def test_a_high_tide_outside_daylight_is_not_offered():
@@ -88,4 +88,4 @@ def test_a_clear_forecast_and_calm_weather_is_green():
     verdict = rate()
 
     assert verdict.rating == GREEN
-    assert verdict.window is not None
+    assert verdict.windows[0].window is not None

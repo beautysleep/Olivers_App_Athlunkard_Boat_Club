@@ -37,9 +37,9 @@ def test_a_calm_far_day_is_rated_from_its_daily_figure():
 def test_a_far_day_still_gets_a_window_and_says_it_is_approximated():
     verdict = rate(DailyWeather(wind_speed_ms=3.0, rain_mm=0.0))
 
-    assert verdict.window is not None
-    assert any("approximated" in reason.lower() for reason in verdict.reasons)
-    assert any("hourly" in reason.lower() for reason in verdict.reasons)
+    assert verdict.windows[0].window is not None
+    assert any("approximated" in r.lower() for r in verdict.windows[0].reasons)
+    assert any("hourly" in r.lower() for r in verdict.windows[0].reasons)
 
 
 def test_a_windy_far_day_is_still_red():
@@ -84,4 +84,4 @@ def test_hourly_detail_is_preferred_over_the_daily_figure_where_it_reaches():
     )
 
     assert verdict.rating == RED
-    assert not any("approximated" in reason.lower() for reason in verdict.reasons)
+    assert not any("approximated" in r.lower() for r in verdict.windows[0].reasons)

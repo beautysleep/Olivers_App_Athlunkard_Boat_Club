@@ -52,10 +52,25 @@ class DailyWeather:
 
 
 @dataclass(frozen=True)
-class DayRating:
-    rating: str | None
+class WindowRating:
+    """One of a day's rowable high tides, rated on its own. A day has two, each
+    committable without the other, so a single verdict for the day would flatten
+    out the one the coach actually wants."""
+
+    high_tide_at: datetime
+    rating: str
     window: tuple[datetime, datetime] | None
     reasons: list[str]
+
+
+@dataclass(frozen=True)
+class DayRating:
+    """[reasons] are the day-level ones — the overrides that settle every window
+    at once. Anything specific to a tide lives on its own [WindowRating]."""
+
+    rating: str | None
+    reasons: list[str]
+    windows: list[WindowRating] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

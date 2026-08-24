@@ -70,10 +70,10 @@ def test_the_window_lands_inside_the_day_it_belongs_to():
 
     document = rate_all_days(tide, weather, CLEAR, computed_at=utc(26, 6))["2026-08-26"]
 
-    assert (
-        utc(26, 5) <= document["window_start"] < document["window_end"] <= utc(26, 21)
-    )
-    assert document["window_end"] - document["window_start"] >= timedelta(
+    window = document["windows"][0]
+
+    assert utc(26, 5) <= window["window_start"] < window["window_end"] <= utc(26, 21)
+    assert window["window_end"] - window["window_start"] >= timedelta(
         hours=1, minutes=30
     )
 
@@ -84,3 +84,14 @@ def test_days_already_past_are_not_rated():
     rated = rate_all_days(tide, weather, CLEAR, computed_at=utc(25, 6))
 
     assert sorted(rated) == ["2026-08-25", "2026-08-26"]
+
+
+def test_only_today_is_measured_against_the_clock():
+    tide, weather = build({"25": {}, "26": {}})
+
+    # Noon on the 25th is past that day's noon high tide, but must not touch
+    # the 26th's.
+    rated = rate_all_days(tide, weather, CLEAR, computed_at=utc(25, 13))
+
+    assert rated["2026-08-25"]["windows"][0]["window_start"] is None
+    assert rated["2026-08-26"]["windows"][0]["window_start"] is not None

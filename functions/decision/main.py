@@ -58,6 +58,7 @@ def rate_all_days(
             water_release_classification=classification,
             cumulative_rain_mm=cumulative_rain_before(weather_documents, date_str),
             thresholds=thresholds,
+            now=computed_at if date_str == today else None,
         )
         rated[date_str] = build_rating_document(
             date_str, rating, computed_at=computed_at
