@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/day_conditions.dart';
 import '../../models/session.dart';
 import '../../models/user_profile.dart';
+import '../../services/day_ratings.dart';
 import '../../services/daylight_conditions.dart';
 import '../../services/meeting_times.dart';
 import '../../services/session_windows.dart';
@@ -31,6 +32,7 @@ class DayCard extends StatefulWidget {
     required this.onMarkUnavailable,
     required this.onOpenSession,
     this.offerableSessions,
+    this.liveDayRating,
     this.sessionsWithoutAWindow = const [],
     this.liveWeather,
     this.liveWaterRelease,
@@ -42,6 +44,11 @@ class DayCard extends StatefulWidget {
   /// Null means no live tide or daylight data; empty means live data but
   /// nothing rowable. Either way there is no window, so nothing to propose.
   final List<HighTideSession>? offerableSessions;
+
+  /// The decision engine's verdict. Null, or carrying a null rating, means the
+  /// engine has not reached this day — which the card says, rather than falling
+  /// back to [DayConditions.conditionRating], the last mock on it.
+  final LiveDayRating? liveDayRating;
 
   /// Their commitments are real even though that time can no longer be offered
   /// as a fresh proposal, so the card still shows them.
@@ -72,7 +79,7 @@ class _DayCardState extends State<DayCard> {
     ...widget.sessionsWithoutAWindow,
   ];
 
-  String _statusBadge() {
+  String? _statusBadge() {
     final sessions = _proposedSessions;
     if (sessions.any((s) => s.status == SessionStatus.confirmed)) {
       return 'Confirmed';
@@ -85,9 +92,8 @@ class _DayCardState extends State<DayCard> {
     }
     if (sessions.isNotEmpty) return 'Cancelled';
     if (widget.unavailable) return 'Unavailable';
-    return widget.day.conditionRating == Conditions.red
-        ? 'No row'
-        : 'Available';
+    if (_rating == null) return null;
+    return _rating == Conditions.red ? 'No row' : 'Available';
   }
 
   @override
@@ -127,14 +133,17 @@ class _DayCardState extends State<DayCard> {
     child: Card(clipBehavior: Clip.antiAlias, child: child),
   );
 
+  Conditions? get _rating => widget.liveDayRating?.conditions;
+
   Widget _front(BuildContext context) {
-    final style = conditionStyle(widget.day.conditionRating);
+    final rating = _rating;
+    final style = rating == null ? null : conditionStyle(rating);
     return _shell(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            color: style.color,
+            color: style?.color ?? Colors.grey.shade500,
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Column(
               children: [
@@ -160,15 +169,18 @@ class _DayCardState extends State<DayCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    style.shortLabel,
+                    style?.shortLabel ?? 'Not rated yet',
                     style: TextStyle(
-                      color: style.color,
+                      color: style?.color ?? Colors.grey.shade600,
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  _StatusBadge(text: _statusBadge()),
+                  ?switch (_statusBadge()) {
+                    final badge? => _StatusBadge(text: badge),
+                    _ => null,
+                  },
                   const Spacer(),
                   Row(
                     children: [
@@ -232,7 +244,8 @@ class _DayCardState extends State<DayCard> {
   /// look rather than take the app's word.
   List<Widget> _additionalInformation() {
     final w = widget.liveWaterRelease;
-    if (w == null) return const [];
+    final reasons = widget.liveDayRating?.reasons ?? const <String>[];
+    if (w == null && reasons.isEmpty) return const [];
     return [
       const SizedBox(height: 20),
       const Divider(height: 1),
@@ -246,15 +259,30 @@ class _DayCardState extends State<DayCard> {
         ),
       ),
       const SizedBox(height: 8),
-      Text(
-        'Water release',
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: Colors.grey.shade600,
+      for (final reason in reasons) ...[
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Text(
+            reason,
+            style: TextStyle(
+              fontSize: 11,
+              height: 1.35,
+              color: Colors.grey.shade800,
+            ),
+          ),
         ),
-      ),
-      if (w.statementRaw.isNotEmpty) ...[
+      ],
+      if (w != null) ...[
+        Text(
+          'Water release',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      ],
+      if (w != null && w.statementRaw.isNotEmpty) ...[
         const SizedBox(height: 4),
         Text(
           '“${w.statementRaw}”',
@@ -266,8 +294,10 @@ class _DayCardState extends State<DayCard> {
           ),
         ),
       ],
-      const SizedBox(height: 6),
-      _sourceLink('ESB Shannon Hydro Forecast (PDF)', w.sourceUrl),
+      if (w != null) ...[
+        const SizedBox(height: 6),
+        _sourceLink('ESB Shannon Hydro Forecast (PDF)', w.sourceUrl),
+      ],
     ];
   }
 
@@ -344,7 +374,7 @@ class _DayCardState extends State<DayCard> {
     if (session != null) return _openSession(session, nameWindowsByTime);
     if (widget.role != UserRole.coach ||
         widget.unavailable ||
-        widget.day.conditionRating == Conditions.red) {
+        _rating == Conditions.red) {
       return null;
     }
     return _fullWidth(
