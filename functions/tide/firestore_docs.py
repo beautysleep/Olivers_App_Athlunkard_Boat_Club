@@ -1,11 +1,6 @@
-"""Shape tide extremes into per-day Firestore documents.
-
-Pure (no Firestore/network dependency) so it stays unit-testable; the actual
-write lives in function.py.
-
-One document per LOCAL (Europe/Dublin) day, keyed by the date string — so the
-app can read a calendar day directly. `time_utc` is kept as a datetime, which
-the Firestore client stores as a native Timestamp.
+"""One document per LOCAL (Europe/Dublin) day, keyed by the date string, so the
+app can read a calendar day directly. `time_utc` stays a datetime, which the
+Firestore client stores as a native Timestamp.
 """
 
 from __future__ import annotations

@@ -13,13 +13,13 @@ const _coach = UserProfile(
 );
 
 LiveHighTide _highTide(int hour) =>
-    LiveHighTide(time: DateTime(2026, 8, 25, hour), heightMetres: 4.6);
+    LiveHighTide(localTime: DateTime(2026, 8, 25, hour), heightMetres: 4.6);
 
 Session _sessionAt(DateTime time) => Session(
   id: 's_$time',
-  date: time,
+  meetingTime: time,
   highTideTime: time,
-  conditions: Conditions.green,
+  conditionRating: Conditions.green,
   coach: _coach,
   committedAthletes: [],
 );
@@ -29,7 +29,7 @@ void main() {
     test('pairs each offerable high tide with the session proposed for it', () {
       final morning = _highTide(7);
       final evening = _highTide(19);
-      final proposed = _sessionAt(evening.time);
+      final proposed = _sessionAt(evening.localTime);
 
       final byHighTide = sessionsByHighTide([morning, evening], [proposed]);
 
@@ -38,7 +38,7 @@ void main() {
     });
 
     test('keeps a session whose window is no longer offered', () {
-      final stranded = _sessionAt(_highTide(19).time);
+      final stranded = _sessionAt(_highTide(19).localTime);
 
       final orphaned = sessionsWithoutAHighTide([_highTide(7)], [stranded]);
 
@@ -46,7 +46,7 @@ void main() {
     });
 
     test('strands every session for a day with no live tide data at all', () {
-      final morning = _sessionAt(_highTide(7).time);
+      final morning = _sessionAt(_highTide(7).localTime);
 
       expect(sessionsWithoutAHighTide(const [], [morning]), [morning]);
     });
@@ -54,7 +54,10 @@ void main() {
     test('leaves a window unproposed when no session sits at its time', () {
       final morning = _highTide(7);
 
-      final byHighTide = sessionsByHighTide([morning], [_sessionAt(_highTide(19).time)]);
+      final byHighTide = sessionsByHighTide(
+        [morning],
+        [_sessionAt(_highTide(19).localTime)],
+      );
 
       expect(byHighTide.single.session, isNull);
     });

@@ -11,7 +11,11 @@ void main() {
     });
 
     test('offers earlier half-hour steps for a longer session', () {
-      expect(meetingTimesBefore(_at(6, 41)), [_at(6, 0), _at(5, 30), _at(5, 0)]);
+      expect(meetingTimesBefore(_at(6, 41)), [
+        _at(6, 0),
+        _at(5, 30),
+        _at(5, 0),
+      ]);
     });
 
     test('steps back when the half hour is too close to launch in', () {
@@ -24,7 +28,10 @@ void main() {
     });
 
     test('crosses midnight backwards without inventing a time', () {
-      expect(meetingTimesBefore(_at(0, 20)).first, DateTime(2026, 8, 25, 23, 30));
+      expect(
+        meetingTimesBefore(_at(0, 20)).first,
+        DateTime(2026, 8, 25, 23, 30),
+      );
     });
   });
 }

@@ -1,9 +1,3 @@
-"""Thin HTTP client for the WorldTides v3 extremes endpoint.
-
-Isolated from parsing/calibration so the rest of the service can be tested
-without the network or an API key.
-"""
-
 from __future__ import annotations
 
 import requests

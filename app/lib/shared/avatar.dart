@@ -1,6 +1,5 @@
-/// Profile circles — initials on a colour derived from the person's id, so the
-/// "who's going" view reads like the WhatsApp-poll experience the flows ask for
-/// (faces, not just a headcount).
+/// Faces rather than a headcount, so "who's going" reads like the WhatsApp
+/// poll the flows describe.
 library;
 
 import 'package:flutter/material.dart';
@@ -48,8 +47,6 @@ class ProfileCircle extends StatelessWidget {
   }
 }
 
-/// A compact overlapping row of avatars with a "+N" overflow bubble — the
-/// at-a-glance "who's going".
 class ProfileCircleRow extends StatelessWidget {
   const ProfileCircleRow({
     super.key,

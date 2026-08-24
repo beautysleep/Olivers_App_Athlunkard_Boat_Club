@@ -1,9 +1,4 @@
-"""Fetch Limerick / Athlunkard weather from OpenWeather One Call 4.0 and shape it.
-
-Reusable entrypoint (`fetch_club_weather`) plus a small CLI so we can prove the
-source before wiring it into Cloud Functions / Firestore.
-
-The CLI prints only our *derived* data (WeatherPoints / documents) — never the
+"""The CLI prints only our *derived* data (WeatherPoints, documents) — never the
 raw API response, which carries the key in its pagination URLs.
 
 Run:

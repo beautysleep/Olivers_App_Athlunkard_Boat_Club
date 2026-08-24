@@ -34,18 +34,20 @@ class SessionDetailScreen extends StatelessWidget {
       );
     }
 
-    final style = conditionStyle(session.conditions);
+    final style = conditionStyle(session.conditionRating);
 
     return Scaffold(
-      appBar: AppBar(title: Text(formatDayDate(session.date))),
+      appBar: AppBar(title: Text(formatDayDate(session.meetingTime))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(formatDayTime(session.date),
-                  style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                formatDayTime(session.meetingTime),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               Chip(
                 backgroundColor: style.color.withValues(alpha: 0.15),
                 side: BorderSide(color: style.color),
@@ -130,21 +132,24 @@ class SessionDetailScreen extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Change this session',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Change this session',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
-              onPressed: () => _confirmCancel(context, appState, session,
-                  pivot: true),
+              onPressed: () =>
+                  _confirmCancel(context, appState, session, pivot: true),
               icon: const Icon(Icons.directions_run),
               label: const Text('Move to land training'),
             ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error),
-              onPressed: () => _confirmCancel(context, appState, session,
-                  pivot: false),
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: () =>
+                  _confirmCancel(context, appState, session, pivot: false),
               icon: const Icon(Icons.cancel_outlined),
               label: const Text('Cancel outright'),
             ),
@@ -175,10 +180,12 @@ class SessionDetailScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(pivot ? 'Move to land training?' : 'Cancel session?'),
-        content: Text(pivot
-            ? 'Athletes who committed will be told the session has moved off '
-                'the water to land training.'
-            : 'Athletes who committed will be told the session is cancelled.'),
+        content: Text(
+          pivot
+              ? 'Athletes who committed will be told the session has moved off '
+                    'the water to land training.'
+              : 'Athletes who committed will be told the session is cancelled.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -193,8 +200,12 @@ class SessionDetailScreen extends StatelessWidget {
     );
     if (confirmed == true && context.mounted) {
       appState.cancelSession(session, pivotToLand: pivot);
-      _snack(context,
-          pivot ? 'Moved to land — athletes notified.' : 'Cancelled — athletes notified.');
+      _snack(
+        context,
+        pivot
+            ? 'Moved to land — athletes notified.'
+            : 'Cancelled — athletes notified.',
+      );
     }
   }
 }
@@ -207,17 +218,17 @@ class _StatusBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icon, color, title, subtitle) = switch (session.lifecycle) {
       SessionLifecycle.cancelledWeatherPivot => (
-          Icons.directions_run,
-          const Color(0xFFEF6C00),
-          'Moved to land training',
-          'Conditions turned — training continues on land.',
-        ),
+        Icons.directions_run,
+        const Color(0xFFEF6C00),
+        'Moved to land training',
+        'Conditions turned — training continues on land.',
+      ),
       SessionLifecycle.cancelledOutright => (
-          Icons.cancel,
-          const Color(0xFFC62828),
-          'Cancelled',
-          'This session will not run.',
-        ),
+        Icons.cancel,
+        const Color(0xFFC62828),
+        'Cancelled',
+        'This session will not run.',
+      ),
       SessionLifecycle.proposed =>
         session.status == SessionStatus.confirmed
             ? (
@@ -247,11 +258,12 @@ class _StatusBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(color: color)),
+                  Text(
+                    title,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(color: color),
+                  ),
                   Text(subtitle),
                   if (session.lifecycle == SessionLifecycle.proposed &&
                       session.status != SessionStatus.confirmed) ...[
@@ -265,7 +277,8 @@ class _StatusBanner extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                        '${session.committedCount} / ${session.minimumCrew} committed'),
+                      '${session.committedCount} / ${session.minimumCrew} committed',
+                    ),
                   ],
                 ],
               ),

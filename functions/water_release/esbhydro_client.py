@@ -1,13 +1,6 @@
-"""Thin HTTP + PDF-extraction client for ESB's Shannon hydrometric PDFs.
-
-Isolated from parsing so the rest of the service stays testable without the
-network (parse.py works on the plain text/row dicts this module produces).
-Mirrors the weather service's openweather_client.py: this is the one file that
-owns turning the wire format (PDF bytes) into usable Python data.
-
-No API key — ESB publishes these as public PDFs. Plain HTTP only: esbhydro.ie
-has no HTTPS listener on port 443 (confirmed by a direct connection test), so
-this deliberately does not upgrade to https://.
+"""No API key — ESB publishes these as public PDFs. Plain HTTP only:
+esbhydro.ie has no HTTPS listener on port 443 (confirmed by a direct connection
+test), so this deliberately does not upgrade to https://.
 """
 
 from __future__ import annotations

@@ -10,14 +10,14 @@ import 'package:athlunkard_boat_club/services/tide_windows.dart';
 
 final _day = DayConditions(
   date: DateTime(2026, 8, 24),
-  conditions: Conditions.green,
-  highTide: DateTime(2026, 8, 24, 16, 30),
+  conditionRating: Conditions.green,
+  highTideTime: DateTime(2026, 8, 24, 16, 30),
   highTideHeightMetres: 4.1,
   windKnots: 12,
   rainfallMm: 0.5,
   waterReleaseActive: false,
-  sunrise: DateTime(2026, 8, 24, 5, 30),
-  sunset: DateTime(2026, 8, 24, 21, 45),
+  localSunrise: DateTime(2026, 8, 24, 5, 30),
+  localSunset: DateTime(2026, 8, 24, 21, 45),
 );
 
 const _coach = UserProfile(
@@ -28,19 +28,19 @@ const _coach = UserProfile(
 );
 
 final _morning = LiveHighTide(
-  time: DateTime(2026, 8, 24, 7, 15),
+  localTime: DateTime(2026, 8, 24, 7, 15),
   heightMetres: 4.6,
 );
 final _evening = LiveHighTide(
-  time: DateTime(2026, 8, 24, 19, 40),
+  localTime: DateTime(2026, 8, 24, 19, 40),
   heightMetres: 4.4,
 );
 
 Session _sessionAt(DateTime time) => Session(
   id: 's_$time',
-  date: time,
+  meetingTime: time,
   highTideTime: time,
-  conditions: Conditions.green,
+  conditionRating: Conditions.green,
   coach: _coach,
   committedAthletes: [],
 );
@@ -129,7 +129,10 @@ void main() {
     ) async {
       await tester.pumpWidget(
         _card(
-          sessionsByHighTide([_morning, _evening], [_sessionAt(_morning.time)]),
+          sessionsByHighTide(
+            [_morning, _evening],
+            [_sessionAt(_morning.localTime)],
+          ),
         ),
       );
       await _flipToBack(tester);

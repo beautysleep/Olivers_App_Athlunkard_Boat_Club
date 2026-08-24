@@ -1,9 +1,3 @@
-"""Domain types for the water-release (Parteen Weir / Ardnacrusha) service.
-
-Kept free of any HTTP/PDF-parsing dependency so document-building is
-unit-tested without a network call. Mirrors the weather service's models.py.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

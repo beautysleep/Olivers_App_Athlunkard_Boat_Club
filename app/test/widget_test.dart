@@ -4,8 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:athlunkard_boat_club/main.dart';
 
 void main() {
-  testWidgets('boots to login, then signs in to the role home',
-      (tester) async {
+  testWidgets('boots to login, then signs in to the role home', (tester) async {
     await tester.pumpWidget(const AthlunkardBoatClubApp());
 
     // The login screen is shown first.

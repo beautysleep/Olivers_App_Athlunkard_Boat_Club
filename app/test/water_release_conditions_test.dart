@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:athlunkard_boat_club/services/water_release_conditions.dart';
 
 void main() {
-  group('liveWaterReleaseFromDoc', () {
+  group('liveWaterReleaseFromDocument', () {
     test('maps a clear (no discharge expected) forecast', () {
-      final w = liveWaterReleaseFromDoc({
+      final w = liveWaterReleaseFromDocument({
         'parteen_forecast': {
           'discharge_classification': kNoDischargeExpected,
           'discharge_statement_raw':
@@ -20,7 +20,7 @@ void main() {
     });
 
     test('carries the ESB source URL through so the coach can verify it', () {
-      final w = liveWaterReleaseFromDoc({
+      final w = liveWaterReleaseFromDocument({
         'parteen_forecast': {
           'discharge_classification': kNoDischargeExpected,
           'source_url':
@@ -31,16 +31,14 @@ void main() {
     });
 
     test('a document with no source URL yields null, not a guessed one', () {
-      final w = liveWaterReleaseFromDoc({
-        'parteen_forecast': {
-          'discharge_classification': kNoDischargeExpected,
-        },
+      final w = liveWaterReleaseFromDocument({
+        'parteen_forecast': {'discharge_classification': kNoDischargeExpected},
       });
       expect(w!.sourceUrl, isNull);
     });
 
     test('maps a discharging forecast as a hard no-row, with its range', () {
-      final w = liveWaterReleaseFromDoc({
+      final w = liveWaterReleaseFromDocument({
         'parteen_forecast': {
           'discharge_classification': kDischargeExpected,
           'discharge_statement_raw':
@@ -59,7 +57,7 @@ void main() {
     });
 
     test('a discharging forecast without a range still blocks rowing', () {
-      final w = liveWaterReleaseFromDoc({
+      final w = liveWaterReleaseFromDocument({
         'parteen_forecast': {
           'discharge_classification': kDischargeExpected,
           'discharge_statement_raw': 'a discharge will be necessary',
@@ -71,7 +69,7 @@ void main() {
     });
 
     test('an unparsed forecast is neither clear nor discharging', () {
-      final w = liveWaterReleaseFromDoc({
+      final w = liveWaterReleaseFromDocument({
         'parteen_forecast': {
           'discharge_classification': kUnparsed,
           'discharge_statement_raw': 'some future wording never seen before',
@@ -82,7 +80,7 @@ void main() {
     });
 
     test('maps an unparsed forecast as not clear', () {
-      final w = liveWaterReleaseFromDoc({
+      final w = liveWaterReleaseFromDocument({
         'parteen_forecast': {
           'discharge_classification': kUnparsed,
           'discharge_statement_raw': 'some future wording never seen before',
@@ -94,16 +92,16 @@ void main() {
     });
 
     test('null document returns null', () {
-      expect(liveWaterReleaseFromDoc(null), isNull);
+      expect(liveWaterReleaseFromDocument(null), isNull);
     });
 
     test('missing parteen_forecast section returns null', () {
-      expect(liveWaterReleaseFromDoc({'source': 'esbhydro'}), isNull);
+      expect(liveWaterReleaseFromDocument({'source': 'esbhydro'}), isNull);
     });
 
     test('missing classification returns null (nothing usable)', () {
       expect(
-        liveWaterReleaseFromDoc({
+        liveWaterReleaseFromDocument({
           'parteen_forecast': {'discharge_statement_raw': 'text'},
         }),
         isNull,
@@ -111,7 +109,7 @@ void main() {
     });
 
     test('missing raw statement defaults to empty string, not null', () {
-      final w = liveWaterReleaseFromDoc({
+      final w = liveWaterReleaseFromDocument({
         'parteen_forecast': {'discharge_classification': kNoDischargeExpected},
       });
       expect(w!.statementRaw, '');

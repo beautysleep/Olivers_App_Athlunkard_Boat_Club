@@ -69,7 +69,7 @@ class LiveWaterRelease {
 
 /// Builds [LiveWaterRelease] from the Firestore document, or null when
 /// there's no usable classification (so the UI falls back to mock).
-LiveWaterRelease? liveWaterReleaseFromDoc(Map<String, dynamic>? doc) {
+LiveWaterRelease? liveWaterReleaseFromDocument(Map<String, dynamic>? doc) {
   if (doc == null) return null;
   final forecast = (doc['parteen_forecast'] as Map?)?.cast<String, dynamic>();
   if (forecast == null) return null;
@@ -78,8 +78,10 @@ LiveWaterRelease? liveWaterReleaseFromDoc(Map<String, dynamic>? doc) {
   return LiveWaterRelease(
     classification: classification,
     statementRaw: (forecast['discharge_statement_raw'] as String?) ?? '',
-    expectedMinM3s: (forecast['expected_discharge_min_m3s'] as num?)?.toDouble(),
-    expectedMaxM3s: (forecast['expected_discharge_max_m3s'] as num?)?.toDouble(),
+    expectedMinM3s: (forecast['expected_discharge_min_m3s'] as num?)
+        ?.toDouble(),
+    expectedMaxM3s: (forecast['expected_discharge_max_m3s'] as num?)
+        ?.toDouble(),
     sourceUrl: forecast['source_url'] as String?,
   );
 }

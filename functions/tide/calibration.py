@@ -1,12 +1,9 @@
-"""Parse WorldTides extremes and calibrate them from Tarbert to Limerick Dock.
+"""WorldTides resolves the club's coordinates to the nearest station, which for
+the Shannon is ~Tarbert (outer estuary). Limerick Dock, at the tidal limit,
+differs predictably, so the coach's empirical offsets are applied here.
 
-WorldTides resolves the club's coordinates to the nearest station, which for the
-Shannon is ~Tarbert (outer estuary). Limerick Dock, at the tidal limit, differs
-in a predictable way, so we apply the coach's empirical offsets.
-
-These offsets are TUNABLE, not final — they are the coach's field estimates and
-should be refined against the OPW "Limerick Dock" gauge. Do not treat them as
-ground truth.
+These offsets are TUNABLE, not final — field estimates to be refined against the
+OPW "Limerick Dock" gauge. Do not treat them as ground truth.
 """
 
 from __future__ import annotations

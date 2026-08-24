@@ -1,9 +1,4 @@
-"""Fetch Limerick Dock tide predictions from WorldTides and calibrate them.
-
-Reusable entrypoint (`fetch_limerick_tides`) plus a small CLI so we can prove
-the source + calibration before wiring it into Cloud Functions / Firestore.
-
-Run:
+"""Run:
     export WORLDTIDES_API_KEY=...       # never commit this
     python functions/tide/main.py 7     # 7 days of extremes
 """

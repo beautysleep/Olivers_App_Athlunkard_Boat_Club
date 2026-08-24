@@ -25,7 +25,7 @@ class CalendarScreen extends StatelessWidget {
     final appState = AppScope.of(context);
     final user = appState.currentUser!;
     final days = appState.upcomingDays();
-    final unavailable = appState.unavailableDays();
+    final unavailable = appState.coachUnavailableDays();
 
     return SingleChildScrollView(
       child: Column(
@@ -79,7 +79,7 @@ class CalendarScreen extends StatelessWidget {
                     );
                   },
                   onMarkUnavailable: () {
-                    appState.markUnavailable(day);
+                    appState.markCoachUnavailable(day);
                     _snack(context, "Marked unavailable — won't be proposed.");
                   },
                   onOpenSession: (session) {
@@ -133,13 +133,13 @@ class _Legend extends StatelessWidget {
 }
 
 class _LegendRow extends StatelessWidget {
-  const _LegendRow(this.conditions, this.text);
-  final Conditions conditions;
+  const _LegendRow(this.conditionRating, this.text);
+  final Conditions conditionRating;
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (conditions) {
+    final color = switch (conditionRating) {
       Conditions.green => const Color(0xFF2E7D32),
       Conditions.amber => const Color(0xFFEF6C00),
       Conditions.red => const Color(0xFFC62828),

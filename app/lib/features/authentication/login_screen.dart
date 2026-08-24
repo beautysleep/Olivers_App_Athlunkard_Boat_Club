@@ -27,8 +27,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _signIn() {
     final ok = AppScope.of(context).login(_email.text, _password.text);
-    // On success the root listens to AppState and swaps to the role home; we
-    // only need to surface failure here.
+    // Success needs no navigation: the root listens to AppState and swaps to
+    // the role home itself.
     if (!ok) setState(() => _error = 'Email or password not recognised.');
   }
 
@@ -46,10 +46,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   String _roleLabel(UserRole r) => switch (r) {
-        UserRole.coach => 'Coach',
-        UserRole.athlete => 'Athlete',
-        UserRole.parent => 'Parent',
-      };
+    UserRole.coach => 'Coach',
+    UserRole.athlete => 'Athlete',
+    UserRole.parent => 'Parent',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +107,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 12),
                   Text(
                     _error!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 ],
                 const SizedBox(height: 20),
