@@ -7,8 +7,10 @@ import '../models/user_profile.dart';
 import '../shared/formatting.dart';
 import 'club_repository.dart';
 import 'firestore_tide_repository.dart';
+import 'firestore_day_rating_repository.dart';
 import 'firestore_water_release_repository.dart';
 import 'firestore_weather_repository.dart';
+import 'day_ratings.dart';
 import 'daylight_conditions.dart';
 import 'session_windows.dart';
 import 'tide_windows.dart';
@@ -21,7 +23,9 @@ class AppState extends ChangeNotifier {
     FirestoreTideRepository? tideRepository,
     FirestoreWeatherRepository? weatherRepository,
     FirestoreWaterReleaseRepository? waterReleaseRepository,
-  }) : _liveTideSource = tideRepository,
+    FirestoreDayRatingRepository? dayRatingRepository,
+  }) : _liveDayRatingSource = dayRatingRepository,
+       _liveTideSource = tideRepository,
        _liveWeatherSource = weatherRepository,
        _liveWaterReleaseSource = waterReleaseRepository;
 
@@ -36,6 +40,9 @@ class AppState extends ChangeNotifier {
 
   final FirestoreWaterReleaseRepository? _liveWaterReleaseSource;
   LiveWaterRelease? _liveWaterRelease;
+
+  final FirestoreDayRatingRepository? _liveDayRatingSource;
+  Map<String, LiveDayRating> _liveDayRatings = {};
 
   UserProfile? _currentUser;
   UserProfile? get currentUser => _currentUser;
@@ -131,6 +138,17 @@ class AppState extends ChangeNotifier {
   }
 
   LiveWaterRelease? get liveWaterRelease => _liveWaterRelease;
+
+  Future<void> loadLiveDayRatings() async {
+    final repository = _liveDayRatingSource;
+    if (repository == null) return;
+    await _loadOptionalSource(() async {
+      _liveDayRatings = await repository.loadRatings();
+    });
+  }
+
+  LiveDayRating? liveDayRatingFor(DateTime date) =>
+      _liveDayRatings[_dateKey(date)];
 
   String _dateKey(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-'

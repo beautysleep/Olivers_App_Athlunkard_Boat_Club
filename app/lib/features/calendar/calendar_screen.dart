@@ -62,6 +62,7 @@ class CalendarScreen extends StatelessWidget {
                   unavailable: isUnavailable,
                   role: user.role,
                   offerableSessions: daySessions.offerableWindows,
+                  liveDayRating: appState.liveDayRatingFor(day.date),
                   sessionsWithoutAWindow: daySessions.sessionsWithoutAWindow,
                   liveWeather: appState.liveWeatherFor(day.date),
                   liveWaterRelease: appState.liveWaterRelease,

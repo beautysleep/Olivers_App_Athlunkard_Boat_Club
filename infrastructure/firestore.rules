@@ -23,6 +23,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Day ratings, same as the sources they are computed from: anyone may
+    // read; no client may write (the decision engine's service account
+    // bypasses these rules).
+    match /day_ratings/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;

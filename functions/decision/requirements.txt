@@ -1,0 +1,10 @@
+# IANA tz database so ZoneInfo works in minimal containers without system
+# zoneinfo (e.g. Cloud Functions).
+tzdata>=2024.1
+# Firestore access from the Cloud Function — no stdlib equivalent; official
+# Google client (Apache-2.0). Same approved dependency as the other services.
+google-cloud-firestore>=2.16,<3
+# Note: functions-framework is NOT pinned here — the Cloud Functions Python
+# runtime provides it. Install it in a local venv only for local testing.
+#
+# No HTTP client: this service reads Firestore, not the outside world.
