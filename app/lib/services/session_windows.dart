@@ -18,7 +18,7 @@ List<HighTideSession> sessionsByHighTide(
     (
       highTide: highTide,
       session: sessionsThatDay
-          .where((session) => session.date == highTide.time)
+          .where((session) => session.highTideTime == highTide.time)
           .firstOrNull,
     ),
 ];
@@ -32,6 +32,8 @@ List<Session> sessionsWithoutAHighTide(
   List<Session> sessionsThatDay,
 ) => [
   for (final session in sessionsThatDay)
-    if (!offerableHighTides.any((highTide) => highTide.time == session.date))
+    if (!offerableHighTides.any(
+      (highTide) => highTide.time == session.highTideTime,
+    ))
       session,
 ];

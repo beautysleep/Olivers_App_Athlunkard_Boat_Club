@@ -143,6 +143,7 @@ class MockClubRepository implements ClubRepository {
     _sessions.add(Session(
       id: 's_day2',
       date: tide(2),
+      highTideTime: tide(2),
       conditions: Conditions.amber,
       coach: _coach,
       committedAthletes: [_aoife, _cian, _darragh],
@@ -152,6 +153,7 @@ class MockClubRepository implements ClubRepository {
     _sessions.add(Session(
       id: 's_day5',
       date: tide(5),
+      highTideTime: tide(5),
       conditions: Conditions.green,
       coach: _coach,
       committedAthletes: [_aoife, _meabh, _conor, _cian, _darragh],
@@ -162,6 +164,7 @@ class MockClubRepository implements ClubRepository {
     _sessions.add(Session(
       id: 's_pivot',
       date: tide(1),
+      highTideTime: tide(1),
       conditions: Conditions.amber,
       coach: _coach,
       committedAthletes: [_aoife, _cian],

@@ -16,6 +16,7 @@ Session _session({
     Session(
       id: 's',
       date: DateTime(2026, 7, 4, 6, 30),
+      highTideTime: DateTime(2026, 7, 4, 7, 15),
       conditions: Conditions.green,
       coach: _coach,
       committedAthletes: List.generate(athletes, _athlete),
@@ -50,6 +51,7 @@ void main() {
       final s = Session(
         id: 's',
         date: DateTime(2026, 7, 4),
+        highTideTime: DateTime(2026, 7, 4, 7, 15),
         conditions: Conditions.green,
         coach: _coach,
         committedAthletes: [a],

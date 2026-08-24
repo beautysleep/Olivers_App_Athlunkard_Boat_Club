@@ -39,6 +39,7 @@ final _evening = LiveHighTide(
 Session _sessionAt(DateTime time) => Session(
   id: 's_$time',
   date: time,
+  highTideTime: time,
   conditions: Conditions.green,
   coach: _coach,
   committedAthletes: [],
