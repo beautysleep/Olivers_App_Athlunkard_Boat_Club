@@ -48,7 +48,7 @@ void main() {
       s.login('coach@athlunkard.club', demoPassword);
 
       final day = s.upcomingDays().firstWhere((d) =>
-          d.conditions == Conditions.green &&
+          d.conditionRating == Conditions.green &&
           s.sessionsForDate(d.date).isEmpty);
       final window = _highTideOn(day.date, hour: 6, minute: 41);
       final meetAt = DateTime(day.date.year, day.date.month, day.date.day, 6);
@@ -56,7 +56,7 @@ void main() {
       s.sendProposal(day, window, meetingTime: meetAt);
 
       final session = s.sessionsForDate(day.date).single;
-      expect(session.date, meetAt);
+      expect(session.meetingTime, meetAt);
       expect(session.highTideTime, window.localTime);
     });
 
@@ -65,7 +65,7 @@ void main() {
       s.login('coach@athlunkard.club', demoPassword);
 
       final day = s.upcomingDays().firstWhere((d) =>
-          d.conditions == Conditions.green &&
+          d.conditionRating == Conditions.green &&
           s.sessionsForDate(d.date).isEmpty);
       final window = _highTideOn(day.date, hour: 6, minute: 41);
       final meetAt = DateTime(day.date.year, day.date.month, day.date.day, 6);
@@ -84,7 +84,7 @@ void main() {
       s.login('coach@athlunkard.club', demoPassword);
 
       final day = s.upcomingDays().firstWhere((d) =>
-          d.conditions == Conditions.green &&
+          d.conditionRating == Conditions.green &&
           s.sessionsForDate(d.date).isEmpty);
       final morning = _highTideOn(day.date, hour: 7, minute: 15);
       final evening = _highTideOn(day.date, hour: 19, minute: 40);
@@ -93,7 +93,7 @@ void main() {
       s.sendProposal(day, evening, meetingTime: evening.localTime);
 
       final sessions = s.sessionsForDate(day.date);
-      expect(sessions.map((x) => x.date), [morning.localTime, evening.localTime]);
+      expect(sessions.map((x) => x.meetingTime), [morning.localTime, evening.localTime]);
 
       s.logout();
       s.login('saoirse@athlunkard.club', demoPassword);

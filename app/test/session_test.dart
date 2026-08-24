@@ -15,9 +15,9 @@ Session _session({
 }) =>
     Session(
       id: 's',
-      date: DateTime(2026, 7, 4, 6, 30),
+      meetingTime: DateTime(2026, 7, 4, 6, 30),
       highTideTime: DateTime(2026, 7, 4, 7, 15),
-      conditions: Conditions.green,
+      conditionRating: Conditions.green,
       coach: _coach,
       committedAthletes: List.generate(athletes, _athlete),
       lifecycle: lifecycle,
@@ -50,9 +50,9 @@ void main() {
       final a = _athlete(0);
       final s = Session(
         id: 's',
-        date: DateTime(2026, 7, 4),
+        meetingTime: DateTime(2026, 7, 4),
         highTideTime: DateTime(2026, 7, 4, 7, 15),
-        conditions: Conditions.green,
+        conditionRating: Conditions.green,
         coach: _coach,
         committedAthletes: [a],
       );

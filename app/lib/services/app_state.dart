@@ -153,7 +153,7 @@ class AppState extends ChangeNotifier {
     final user = _currentUser;
     if (user == null) return const [];
     final all = _repository.sessions().toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+      ..sort((a, b) => a.meetingTime.compareTo(b.meetingTime));
     switch (user.role) {
       case UserRole.coach:
         return all;
@@ -185,9 +185,9 @@ class AppState extends ChangeNotifier {
 
     final session = Session(
       id: _repository.nextId('s'),
-      date: meetingTime,
+      meetingTime: meetingTime,
       highTideTime: highTide.localTime,
-      conditions: day.conditions,
+      conditionRating: day.conditionRating,
       coach: coach,
       committedAthletes: [],
     );
@@ -198,7 +198,7 @@ class AppState extends ChangeNotifier {
         athlete.id,
         NotificationType.proposalReceived,
         'New session proposed',
-        'A session is proposed for ${formatDayTime(session.date)} — '
+        'A session is proposed for ${formatDayTime(session.meetingTime)} — '
             'can you attend?',
         sessionId: session.id,
       );
@@ -222,7 +222,7 @@ class AppState extends ChangeNotifier {
         : SessionLifecycle.cancelledOutright;
     _repository.upsertSession(session);
 
-    final when = formatDayTime(session.date);
+    final when = formatDayTime(session.meetingTime);
     for (final athlete in session.committedAthletes) {
       if (pivotToLand) {
         _notify(
@@ -271,7 +271,7 @@ class AppState extends ChangeNotifier {
             NotificationType.childCommitted,
             '${athlete.displayName.split(' ').first} is attending a session',
             '${athlete.displayName.split(' ').first} is planning to attend '
-                'the ${formatDayTime(session.date)} session.',
+                'the ${formatDayTime(session.meetingTime)} session.',
             sessionId: session.id,
           );
         }
@@ -286,7 +286,7 @@ class AppState extends ChangeNotifier {
           a.id,
           NotificationType.sessionConfirmed,
           'Session confirmed',
-          'The ${formatDayTime(session.date)} session is on — '
+          'The ${formatDayTime(session.meetingTime)} session is on — '
               '${session.committedCount} going.',
           sessionId: session.id,
         );
@@ -296,7 +296,7 @@ class AppState extends ChangeNotifier {
         NotificationType.sessionConfirmed,
         'Session confirmed',
         '${session.committedCount} athletes are going to the '
-            '${formatDayTime(session.date)} session.',
+            '${formatDayTime(session.meetingTime)} session.',
         sessionId: session.id,
       );
     }

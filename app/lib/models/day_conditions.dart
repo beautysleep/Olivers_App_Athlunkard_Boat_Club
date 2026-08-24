@@ -1,8 +1,6 @@
-/// The conditions for one upcoming day — the data behind the calendar's
-/// green / amber / red rating, and behind the flip-card detail.
-///
-/// In v1 these are mock values. Later they are filled by the scheduled
-/// condition-check services (tide, wind, rainfall, water release, daylight).
+/// Still mock data — the decision engine is what will fill these in. The live
+/// tide, weather, daylight and water-release readings reach the UI by their own
+/// routes, not through here.
 library;
 
 import 'session.dart';
@@ -10,35 +8,26 @@ import 'session.dart';
 class DayConditions {
   const DayConditions({
     required this.date,
-    required this.conditions,
-    required this.highTide,
+    required this.conditionRating,
+    required this.highTideTime,
     required this.highTideHeightMetres,
     required this.windKnots,
     required this.rainfallMm,
     required this.waterReleaseActive,
-    required this.sunrise,
-    required this.sunset,
+    required this.localSunrise,
+    required this.localSunset,
   });
 
   final DateTime date;
-
-  /// The overall traffic-light rating for the day.
-  final Conditions conditions;
-
-  /// High-tide time — the key piece of information: it tells the coach *when*
-  /// rowing would be possible that day.
-  final DateTime highTide;
+  final Conditions conditionRating;
+  final DateTime highTideTime;
   final double highTideHeightMetres;
-
   final double windKnots;
   final double rainfallMm;
 
-  /// Hard override: ESB Parteen Weir water release. When true, no rowing
-  /// regardless of the other metrics (the deciding upstream signal).
+  /// ESB's Parteen Weir release: true means no rowing whatever the rest says.
   final bool waterReleaseActive;
 
-  /// Daylight bounds — must be light enough to row; sunrise/sunset bound every
-  /// possible window.
-  final DateTime sunrise;
-  final DateTime sunset;
+  final DateTime localSunrise;
+  final DateTime localSunset;
 }

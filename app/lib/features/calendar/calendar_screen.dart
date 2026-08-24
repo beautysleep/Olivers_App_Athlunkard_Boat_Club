@@ -133,13 +133,13 @@ class _Legend extends StatelessWidget {
 }
 
 class _LegendRow extends StatelessWidget {
-  const _LegendRow(this.conditions, this.text);
-  final Conditions conditions;
+  const _LegendRow(this.conditionRating, this.text);
+  final Conditions conditionRating;
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (conditions) {
+    final color = switch (conditionRating) {
       Conditions.green => const Color(0xFF2E7D32),
       Conditions.amber => const Color(0xFFEF6C00),
       Conditions.red => const Color(0xFFC62828),

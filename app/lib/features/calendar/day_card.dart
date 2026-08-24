@@ -101,7 +101,7 @@ class _DayCardState extends State<DayCard> {
     }
     if (sessions.isNotEmpty) return 'Cancelled';
     if (widget.unavailable) return 'Unavailable';
-    return widget.day.conditions == Conditions.red ? 'No row' : 'Available';
+    return widget.day.conditionRating == Conditions.red ? 'No row' : 'Available';
   }
 
   @override
@@ -143,7 +143,7 @@ class _DayCardState extends State<DayCard> {
   );
 
   Widget _front(BuildContext context) {
-    final style = conditionStyle(widget.day.conditions);
+    final style = conditionStyle(widget.day.conditionRating);
     return _shell(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -363,7 +363,7 @@ class _DayCardState extends State<DayCard> {
     if (session != null) return _openSession(session, nameWindowsByTime);
     if (widget.role != UserRole.coach ||
         widget.unavailable ||
-        widget.day.conditions == Conditions.red) {
+        widget.day.conditionRating == Conditions.red) {
       return null;
     }
     return _fullWidth(
@@ -421,7 +421,7 @@ class _DayCardState extends State<DayCard> {
       onPressed: () => widget.onOpenSession(session),
       child: Text(
         nameWindowsByTime
-            ? 'Open ${formatTime(session.date)} session'
+            ? 'Open ${formatTime(session.meetingTime)} session'
             : 'Open session',
       ),
     ),

@@ -12,14 +12,14 @@ import 'package:athlunkard_boat_club/services/weather_conditions.dart';
 /// and deliberately holds values that must NEVER be rendered now.
 final _day = DayConditions(
   date: DateTime(2026, 8, 24),
-  conditions: Conditions.amber,
-  highTide: DateTime(2026, 8, 24, 16, 30),
+  conditionRating: Conditions.amber,
+  highTideTime: DateTime(2026, 8, 24, 16, 30),
   highTideHeightMetres: 4.1,
   windKnots: 12,
   rainfallMm: 0.5,
   waterReleaseActive: true,
-  sunrise: DateTime(2026, 8, 24, 5, 30),
-  sunset: DateTime(2026, 8, 24, 21, 45),
+  localSunrise: DateTime(2026, 8, 24, 5, 30),
+  localSunset: DateTime(2026, 8, 24, 21, 45),
 );
 
 Widget _card({LiveWeather? weather, LiveDaylight? daylight}) => MaterialApp(

@@ -65,7 +65,7 @@ class UpcomingSessionsScreen extends StatelessWidget {
       itemCount: sessions.length,
       itemBuilder: (context, i) {
         final s = sessions[i];
-        final style = conditionStyle(s.conditions);
+        final style = conditionStyle(s.conditionRating);
         final confirmed = !s.isCancelled && s.status == SessionStatus.confirmed;
         return Card(
           child: ListTile(
@@ -76,7 +76,7 @@ class UpcomingSessionsScreen extends StatelessWidget {
               decoration:
                   BoxDecoration(color: style.color, shape: BoxShape.circle),
             ),
-            title: Text(formatDayTime(s.date),
+            title: Text(formatDayTime(s.meetingTime),
                 style: const TextStyle(fontWeight: FontWeight.w600)),
             subtitle: Text(_statusLine(s)),
             trailing: Icon(

@@ -34,17 +34,17 @@ class SessionDetailScreen extends StatelessWidget {
       );
     }
 
-    final style = conditionStyle(session.conditions);
+    final style = conditionStyle(session.conditionRating);
 
     return Scaffold(
-      appBar: AppBar(title: Text(formatDayDate(session.date))),
+      appBar: AppBar(title: Text(formatDayDate(session.meetingTime))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(formatDayTime(session.date),
+              Text(formatDayTime(session.meetingTime),
                   style: Theme.of(context).textTheme.titleLarge),
               Chip(
                 backgroundColor: style.color.withValues(alpha: 0.15),

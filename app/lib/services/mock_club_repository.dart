@@ -112,14 +112,14 @@ class MockClubRepository implements ClubRepository {
     }) =>
         DayConditions(
           date: _at(o, 0, 0),
-          conditions: c,
-          highTide: tide(o),
+          conditionRating: c,
+          highTideTime: tide(o),
           highTideHeightMetres: tideHeight,
           windKnots: wind,
           rainfallMm: rain,
           waterReleaseActive: waterRelease,
-          sunrise: sunrise(o),
-          sunset: sunset(o),
+          localSunrise: sunrise(o),
+          localSunset: sunset(o),
         );
 
     _days.addAll([
@@ -142,9 +142,9 @@ class MockClubRepository implements ClubRepository {
     // A session mid-flight on day 2: 3 committed, needs 1 more.
     _sessions.add(Session(
       id: 's_day2',
-      date: tide(2),
+      meetingTime: tide(2),
       highTideTime: tide(2),
-      conditions: Conditions.amber,
+      conditionRating: Conditions.amber,
       coach: _coach,
       committedAthletes: [_aoife, _cian, _darragh],
     ));
@@ -152,9 +152,9 @@ class MockClubRepository implements ClubRepository {
     // A confirmed session on day 5: 5 committed (>= minimum of 4).
     _sessions.add(Session(
       id: 's_day5',
-      date: tide(5),
+      meetingTime: tide(5),
       highTideTime: tide(5),
-      conditions: Conditions.green,
+      conditionRating: Conditions.green,
       coach: _coach,
       committedAthletes: [_aoife, _meabh, _conor, _cian, _darragh],
     ));
@@ -163,9 +163,9 @@ class MockClubRepository implements ClubRepository {
     // forecast turned red.
     _sessions.add(Session(
       id: 's_pivot',
-      date: tide(1),
+      meetingTime: tide(1),
       highTideTime: tide(1),
-      conditions: Conditions.amber,
+      conditionRating: Conditions.amber,
       coach: _coach,
       committedAthletes: [_aoife, _cian],
       lifecycle: SessionLifecycle.cancelledWeatherPivot,
@@ -243,7 +243,7 @@ class MockClubRepository implements ClubRepository {
     final target = _dateOnly(date);
     return [
       for (final s in _sessions)
-        if (_dateOnly(s.date) == target) s,
+        if (_dateOnly(s.meetingTime) == target) s,
     ];
   }
 
