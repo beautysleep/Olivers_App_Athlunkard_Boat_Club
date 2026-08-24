@@ -377,6 +377,13 @@ class _DayCardState extends State<DayCard> {
         _rating == Conditions.red) {
       return null;
     }
+
+    // The engine rates each tide separately, so a windy morning does not have
+    // to take a calm evening down with it.
+    final verdict = widget.liveDayRating?.forHighTide(window.highTide.localTime);
+    if (verdict != null && verdict.conditions == Conditions.red) {
+      return _ruledOutWindow(time, verdict);
+    }
     return _fullWidth(
       FilledButton(
         onPressed: () => _chooseMeetingTime(window.highTide),
@@ -423,6 +430,32 @@ class _DayCardState extends State<DayCard> {
     );
     if (chosen != null) widget.onSendProposal(highTide, chosen);
   }
+
+  Widget _ruledOutWindow(String time, LiveWindowRating verdict) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 2),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$time tide — not rowable',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: conditionStyle(Conditions.red).color,
+          ),
+        ),
+        for (final reason in verdict.reasons)
+          Text(
+            reason,
+            style: TextStyle(
+              fontSize: 11,
+              height: 1.3,
+              color: Colors.grey.shade700,
+            ),
+          ),
+      ],
+    ),
+  );
 
   Widget _openSession(Session session, bool nameWindowsByTime) => _fullWidth(
     FilledButton.tonal(
