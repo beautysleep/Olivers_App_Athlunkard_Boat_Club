@@ -30,10 +30,10 @@ class FirestoreTideRepository {
         final ts = e['time_utc'];
         final height = (e['height_m'] as num?)?.toDouble();
         if (ts is! Timestamp || height == null) continue;
-        highs.add(LiveHighTide(time: ts.toDate().toLocal(), heightMetres: height));
+        highs.add(LiveHighTide(localTime: ts.toDate().toLocal(), heightMetres: height));
       }
       if (highs.isNotEmpty) {
-        highs.sort((a, b) => a.time.compareTo(b.time));
+        highs.sort((a, b) => a.localTime.compareTo(b.localTime));
         result[doc.id] = highs;
       }
     }

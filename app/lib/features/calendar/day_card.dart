@@ -358,7 +358,7 @@ class _DayCardState extends State<DayCard> {
   /// for a coach on a day they can still row — propose one. Null when there is
   /// nothing this viewer can do with the window.
   Widget? _windowAction(HighTideSession window, bool nameWindowsByTime) {
-    final time = formatTime(window.highTide.time);
+    final time = formatTime(window.highTide.localTime);
     final session = window.session;
     if (session != null) return _openSession(session, nameWindowsByTime);
     if (widget.role != UserRole.coach ||
@@ -397,12 +397,12 @@ class _DayCardState extends State<DayCard> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
               child: Text(
-                'High tide ${formatTime(highTide.time)} \u00b7 '
+                'High tide ${formatTime(highTide.localTime)} \u00b7 '
                 'earlier means a longer session',
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ),
-            for (final meetingTime in meetingTimesBefore(highTide.time))
+            for (final meetingTime in meetingTimesBefore(highTide.localTime))
               ListTile(
                 leading: const Icon(Icons.schedule),
                 title: Text(formatTime(meetingTime)),
@@ -465,7 +465,7 @@ class _DayCardState extends State<DayCard> {
         _metric(
           Icons.waves,
           'High tide',
-          'none in daylight ≥${kMinRowableHighTideMetres}m',
+          'none in daylight ≥${kMinimumRowableHighTideMetres}m',
           status: MetricStatus.live,
         ),
       ];
@@ -475,7 +475,7 @@ class _DayCardState extends State<DayCard> {
         _metric(
           Icons.waves,
           windows.length > 1 ? 'High tide ${i + 1}' : 'High tide',
-          '${formatTime(windows[i].highTide.time)} · '
+          '${formatTime(windows[i].highTide.localTime)} · '
           '${windows[i].highTide.heightMetres.toStringAsFixed(1)}m',
           status: MetricStatus.live,
         ),

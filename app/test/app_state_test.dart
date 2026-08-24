@@ -13,7 +13,7 @@ LiveHighTide _highTideOn(
   required int minute,
   double heightMetres = 4.6,
 }) => LiveHighTide(
-  time: DateTime(date.year, date.month, date.day, hour, minute),
+  localTime: DateTime(date.year, date.month, date.day, hour, minute),
   heightMetres: heightMetres,
 );
 
@@ -57,7 +57,7 @@ void main() {
 
       final session = s.sessionsForDate(day.date).single;
       expect(session.date, meetAt);
-      expect(session.highTideTime, window.time);
+      expect(session.highTideTime, window.localTime);
     });
 
     test('tells athletes when to meet, not when the tide is high', () {
@@ -89,11 +89,11 @@ void main() {
       final morning = _highTideOn(day.date, hour: 7, minute: 15);
       final evening = _highTideOn(day.date, hour: 19, minute: 40);
 
-      s.sendProposal(day, morning, meetingTime: morning.time);
-      s.sendProposal(day, evening, meetingTime: evening.time);
+      s.sendProposal(day, morning, meetingTime: morning.localTime);
+      s.sendProposal(day, evening, meetingTime: evening.localTime);
 
       final sessions = s.sessionsForDate(day.date);
-      expect(sessions.map((x) => x.date), [morning.time, evening.time]);
+      expect(sessions.map((x) => x.date), [morning.localTime, evening.localTime]);
 
       s.logout();
       s.login('saoirse@athlunkard.club', demoPassword);

@@ -8,7 +8,7 @@ void main() {
   final sunset = DateTime(2026, 7, 4, 21, 45);
 
   LiveHighTide high(int h, int m, double height) =>
-      LiveHighTide(time: DateTime(2026, 7, 4, h, m), heightMetres: height);
+      LiveHighTide(localTime: DateTime(2026, 7, 4, h, m), heightMetres: height);
 
   group('offerableHighTides', () {
     test('returns BOTH high tides when both are in daylight and >= 4.2m', () {
@@ -44,13 +44,13 @@ void main() {
         [high(9, 27, 4.0)],
         sunrise: sunrise,
         sunset: sunset,
-        minHeightMetres: 3.5,
+        minimumHeightMetres: 3.5,
       );
       expect(result.length, 1);
     });
 
     test('default threshold is 4.2m', () {
-      expect(kMinRowableHighTideMetres, 4.2);
+      expect(kMinimumRowableHighTideMetres, 4.2);
     });
   });
 
@@ -60,7 +60,7 @@ void main() {
       final sunrise = DateTime(2026, 8, 24, 6, 0);
       final sunset = DateTime(2026, 8, 24, 20, 0);
       final justBeforeSunrise = [
-        LiveHighTide(time: DateTime(2026, 8, 24, 5, 40), heightMetres: 4.5),
+        LiveHighTide(localTime: DateTime(2026, 8, 24, 5, 40), heightMetres: 4.5),
       ];
 
       expect(

@@ -222,7 +222,7 @@ class AppState extends ChangeNotifier {
     final session = Session(
       id: _repo.nextId('s'),
       date: meetingTime,
-      highTideTime: highTide.time,
+      highTideTime: highTide.localTime,
       conditions: day.conditions,
       coach: coach,
       committedAthletes: [],

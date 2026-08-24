@@ -28,11 +28,11 @@ const _coach = UserProfile(
 );
 
 final _morning = LiveHighTide(
-  time: DateTime(2026, 8, 24, 7, 15),
+  localTime: DateTime(2026, 8, 24, 7, 15),
   heightMetres: 4.6,
 );
 final _evening = LiveHighTide(
-  time: DateTime(2026, 8, 24, 19, 40),
+  localTime: DateTime(2026, 8, 24, 19, 40),
   heightMetres: 4.4,
 );
 
@@ -129,7 +129,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         _card(
-          sessionsByHighTide([_morning, _evening], [_sessionAt(_morning.time)]),
+          sessionsByHighTide([_morning, _evening], [_sessionAt(_morning.localTime)]),
         ),
       );
       await _flipToBack(tester);
