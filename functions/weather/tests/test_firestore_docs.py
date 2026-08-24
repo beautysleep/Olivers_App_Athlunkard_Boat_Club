@@ -9,14 +9,45 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from firestore_docs import (  # noqa: E402
+    build_day_document,
     build_documents,
     group_hourly_by_local_day,
 )
 from models import WeatherPoint  # noqa: E402
 
 
-def _pt(iso_utc, wind=5.0, gust=8.0, rain=0.0, pop=0.1):
-    return WeatherPoint(datetime.fromisoformat(iso_utc), wind, gust, rain, pop)
+def _pt(iso_utc, wind=5.0, gust=8.0, rain=0.0, pop=0.1, sunrise=None, sunset=None):
+    return WeatherPoint(
+        datetime.fromisoformat(iso_utc), wind, gust, rain, pop, sunrise, sunset
+    )
+
+
+class DaylightInDocumentTests(unittest.TestCase):
+    """sunrise/sunset sit at document level, not inside `daily` - they are
+    day-level facts, whereas `daily` is documented as the decision metrics."""
+
+    def test_daylight_is_written_at_document_level(self):
+        sunrise = datetime(2026, 8, 24, 5, 30, tzinfo=timezone.utc)
+        sunset = datetime(2026, 8, 24, 20, 45, tzinfo=timezone.utc)
+        doc = build_day_document(
+            "2026-08-24",
+            _pt("2026-08-24T12:00:00+00:00", sunrise=sunrise, sunset=sunset),
+            [],
+            fetched_at=datetime(2026, 8, 24, 9, 0, tzinfo=timezone.utc),
+        )
+        self.assertEqual(doc["sunrise"], sunrise)
+        self.assertEqual(doc["sunset"], sunset)
+        self.assertNotIn("sunrise", doc["daily"])
+
+    def test_a_day_without_a_daily_point_has_null_daylight(self):
+        doc = build_day_document(
+            "2026-08-24",
+            None,
+            [],
+            fetched_at=datetime(2026, 8, 24, 9, 0, tzinfo=timezone.utc),
+        )
+        self.assertIsNone(doc["sunrise"])
+        self.assertIsNone(doc["sunset"])
 
 
 class GroupHourlyByLocalDayTests(unittest.TestCase):
@@ -24,8 +55,8 @@ class GroupHourlyByLocalDayTests(unittest.TestCase):
         # 23:30 UTC in summer is 00:30 the *next* day local (IST, +1h), so it
         # must land in the next local day — the point of grouping on local time.
         late = _pt("2026-07-03T23:30:00+00:00")  # local 07-04
-        day = _pt("2026-07-03T10:00:00+00:00")   # local 07-03
-        nxt = _pt("2026-07-04T08:00:00+00:00")   # local 07-04
+        day = _pt("2026-07-03T10:00:00+00:00")  # local 07-03
+        nxt = _pt("2026-07-04T08:00:00+00:00")  # local 07-04
 
         groups = group_hourly_by_local_day([day, late, nxt])
 

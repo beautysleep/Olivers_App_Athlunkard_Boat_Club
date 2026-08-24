@@ -57,8 +57,34 @@ class DailyParseTests(unittest.TestCase):
         p = self.points[0]
         self.assertEqual(p.wind_speed_ms, 5.51)
         self.assertIsNone(p.wind_gust_ms)  # 4.0 daily omits gust
-        self.assertIsNone(p.pop)           # 4.0 daily omits pop
-        self.assertEqual(p.rain_mm, 0.0)   # dry
+        self.assertIsNone(p.pop)  # 4.0 daily omits pop
+        self.assertEqual(p.rain_mm, 0.0)  # dry
+
+    def test_daily_records_carry_sunrise_and_sunset(self):
+        p = self.points[0]
+        self.assertEqual(
+            p.sunrise_utc, datetime.fromtimestamp(1784349155, tz=timezone.utc)
+        )
+        self.assertEqual(
+            p.sunset_utc, datetime.fromtimestamp(1784407710, tz=timezone.utc)
+        )
+
+    def test_every_daily_record_has_a_daylight_window(self):
+        """Daylight is a hard override in the row/no-row decision, so a day
+        silently missing it would be a real gap - assert the whole horizon."""
+        for point in self.points:
+            self.assertIsNotNone(point.sunrise_utc)
+            self.assertIsNotNone(point.sunset_utc)
+            self.assertLess(point.sunrise_utc, point.sunset_utc)
+
+
+class HourlyDaylightTests(unittest.TestCase):
+    def test_hourly_records_have_no_daylight_window(self):
+        """OWM puts sunrise/sunset only on daily records - the mirror of daily
+        omitting wind_gust/pop. Absent stays None rather than invented."""
+        points = parse_points(_load("onecall_4_hourly.json"))
+        self.assertTrue(all(p.sunrise_utc is None for p in points))
+        self.assertTrue(all(p.sunset_utc is None for p in points))
 
 
 class RainShapeTests(unittest.TestCase):

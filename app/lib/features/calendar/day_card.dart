@@ -6,22 +6,23 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/day_conditions.dart';
 import '../../models/session.dart';
 import '../../models/user_profile.dart';
+import '../../services/daylight_conditions.dart';
 import '../../services/tide_windows.dart';
 import '../../services/water_release_conditions.dart';
 import '../../services/weather_conditions.dart';
 import '../../shared/condition_style.dart';
 import '../../shared/formatting.dart';
 
-/// 1 knot = 1.852 km/h — for showing mock wind (stored in knots) in km/h, the
-/// unit the live data and the row/no-row thresholds use.
-const double _knotsToKmh = 1.852;
-
-/// A metric row's visual treatment. [unknown] is distinct from [danger]: it
-/// means live data arrived but couldn't be classified (e.g. the water-release
-/// PDF's discharge sentence didn't match the one phrasing ever observed) — a
-/// real gap to flag, not a confirmed override, so it must not read the same
-/// as [danger].
-enum MetricStatus { normal, live, danger, unknown }
+/// A metric row's visual treatment.
+///
+/// [unknown] is distinct from [danger]: it means live data arrived but couldn't
+/// be classified (e.g. the water-release PDF's discharge sentence didn't match
+/// any phrasing ever observed) — a real gap to flag, not a confirmed override.
+///
+/// [missing] means no live data reached us at all. It is deliberately NOT a
+/// fallback to mock values: a plausible-looking number the coach cannot tell
+/// apart from a real reading destroys trust in every other number on the card.
+enum MetricStatus { normal, live, danger, unknown, missing }
 
 /// A calendar day as a flip card: the colour-coded front shows the rating; tap
 /// to flip and reveal the metrics behind the call (plus the coach's actions).
@@ -38,6 +39,7 @@ class DayCard extends StatefulWidget {
     this.offerableHighTides,
     this.liveWeather,
     this.liveWaterRelease,
+    this.liveDaylight,
   });
 
   final DayConditions day;
@@ -51,8 +53,11 @@ class DayCard extends StatefulWidget {
   /// Live daily weather (km/h wind, mm rain) for this day, or null → show mock.
   final LiveWeather? liveWeather;
 
-  /// Live water-release status (global, not per-day), or null → show mock.
+  /// Live water-release status (global, not per-day), or null → "No data".
   final LiveWaterRelease? liveWaterRelease;
+
+  /// Live daylight bounds for this day, or null → "No data".
+  final LiveDaylight? liveDaylight;
   final bool unavailable;
   final UserRole role;
   final VoidCallback onSendProposal;
@@ -202,15 +207,11 @@ class _DayCardState extends State<DayCard> {
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
             ),
             const Divider(height: 12),
-            ..._highTideRows(day),
-            _windRow(day),
-            _rainRow(day),
-            _waterReleaseRow(day),
-            _metric(
-              Icons.wb_sunny,
-              'Daylight',
-              '${formatTime(day.sunrise)}–${formatTime(day.sunset)}',
-            ),
+            ..._highTideRows(),
+            _windRow(),
+            _rainRow(),
+            _waterReleaseRow(),
+            _daylightRow(),
             const SizedBox(height: 16),
             ..._actions(context),
             ..._additionalInformation(),
@@ -375,16 +376,10 @@ class _DayCardState extends State<DayCard> {
 
   /// High-tide row(s): live offerable windows (one or two) when available,
   /// otherwise the mock high tide. A day with two qualifying highs shows two.
-  List<Widget> _highTideRows(DayConditions day) {
+  List<Widget> _highTideRows() {
     final offer = widget.offerableHighTides;
     if (offer == null) {
-      return [
-        _metric(
-          Icons.waves,
-          'High tide',
-          '${formatTime(day.highTide)} · ${day.highTideHeightMetres}m',
-        ),
-      ];
+      return [_missing(Icons.waves, 'High tide')];
     }
     if (offer.isEmpty) {
       return [
@@ -392,6 +387,7 @@ class _DayCardState extends State<DayCard> {
           Icons.waves,
           'High tide',
           'none in daylight ≥${kMinRowableHighTideMetres}m',
+          status: MetricStatus.live,
         ),
       ];
     }
@@ -409,15 +405,9 @@ class _DayCardState extends State<DayCard> {
 
   /// Wind in km/h — live when available (green dot), else the mock value
   /// converted from knots. km/h matches the row/no-row wind thresholds.
-  Widget _windRow(DayConditions day) {
+  Widget _windRow() {
     final w = widget.liveWeather;
-    if (w == null) {
-      return _metric(
-        Icons.air,
-        'Wind',
-        '${(day.windKnots * _knotsToKmh).round()} km/h',
-      );
-    }
+    if (w == null) return _missing(Icons.air, 'Wind');
     return _metric(
       Icons.air,
       'Wind',
@@ -427,11 +417,9 @@ class _DayCardState extends State<DayCard> {
   }
 
   /// Rainfall in mm — live when available (green dot), else the mock value.
-  Widget _rainRow(DayConditions day) {
+  Widget _rainRow() {
     final w = widget.liveWeather;
-    if (w == null) {
-      return _metric(Icons.water_drop, 'Rain', '${day.rainfallMm} mm');
-    }
+    if (w == null) return _missing(Icons.water_drop, 'Rain');
     return _metric(
       Icons.water_drop,
       'Rain',
@@ -445,18 +433,9 @@ class _DayCardState extends State<DayCard> {
   /// amber when the wording matched neither and so was never guessed either
   /// way (see functions/water_release/README.md). The wording itself lives on
   /// LiveWaterRelease.summaryLabel. Otherwise the mock override.
-  Widget _waterReleaseRow(DayConditions day) {
+  Widget _waterReleaseRow() {
     final w = widget.liveWaterRelease;
-    if (w == null) {
-      return _metric(
-        Icons.dangerous,
-        'Water release',
-        day.waterReleaseActive ? 'YES — no row' : 'None',
-        status: day.waterReleaseActive
-            ? MetricStatus.danger
-            : MetricStatus.normal,
-      );
-    }
+    if (w == null) return _missing(Icons.dangerous, 'Water release');
     return _metric(
       Icons.dangerous,
       'Water release',
@@ -466,6 +445,24 @@ class _DayCardState extends State<DayCard> {
         _ when w.isClear => MetricStatus.live,
         _ => MetricStatus.unknown,
       },
+    );
+  }
+
+  /// A metric with no live data behind it. Says so, rather than showing a mock
+  /// value that reads as real.
+  Widget _missing(IconData icon, String label) =>
+      _metric(icon, label, 'No data', status: MetricStatus.missing);
+
+  /// Daylight bounds — live from the weather forecast (OpenWeather returns
+  /// sunrise/sunset on its daily records), or "No data" beyond its horizon.
+  Widget _daylightRow() {
+    final d = widget.liveDaylight;
+    if (d == null) return _missing(Icons.wb_sunny, 'Daylight');
+    return _metric(
+      Icons.wb_sunny,
+      'Daylight',
+      '${formatTime(d.sunrise)}–${formatTime(d.sunset)}',
+      status: MetricStatus.live,
     );
   }
 
@@ -482,6 +479,7 @@ class _DayCardState extends State<DayCard> {
       MetricStatus.live => liveGreen,
       MetricStatus.danger => dangerRed,
       MetricStatus.unknown => unknownAmber,
+      MetricStatus.missing => Colors.grey.shade500,
       MetricStatus.normal => Colors.grey.shade800,
     };
     final iconColor = status == MetricStatus.danger

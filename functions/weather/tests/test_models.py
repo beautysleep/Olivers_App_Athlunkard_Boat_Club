@@ -10,13 +10,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from models import WeatherPoint  # noqa: E402
 
 
-def _pt(iso_utc, wind=5.0, gust=8.0, rain=0.0, pop=0.1):
+def _pt(iso_utc, wind=5.0, gust=8.0, rain=0.0, pop=0.1, sunrise=None, sunset=None):
     return WeatherPoint(
         time_utc=datetime.fromisoformat(iso_utc),
         wind_speed_ms=wind,
         wind_gust_ms=gust,
         rain_mm=rain,
         pop=pop,
+        sunrise_utc=sunrise,
+        sunset_utc=sunset,
     )
 
 

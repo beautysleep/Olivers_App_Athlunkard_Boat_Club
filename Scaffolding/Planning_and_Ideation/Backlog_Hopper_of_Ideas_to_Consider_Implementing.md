@@ -19,6 +19,7 @@ first raised and who suggested it.
 | 8 | **As a** coach, **I want** to attach a short note (max 256 characters) when sending a proposal — via a "Send with note" option on the Send proposal button — **so that** I can tell athletes things like "focusing on technique today, pack a jacket for the stationary drills". | 2026-08-23 | Marcus |
 | 9 | **As a** new user, **I want** the tide and weather figures to link to their sources the way the water-release figure does, **so that** every number on a day card is verifiable, not just the ESB one. | 2026-08-23 | Marcus |
 | 10 | **As a** coach, **I want** to choose which of a day's two daylight high tides a session is proposed for, **so that** the proposed time matches a real rowable window (today `sendProposal` is pinned to a single mock tide). | 2026-08-23 | Marcus |
+| 11 | **As a** coach, **I want** the day's green/amber/red rating to come from real conditions rather than mock data, **so that** the headline call is as trustworthy as the metrics behind it. Blocked on the row/no-row decision engine — the rating *is* its output, so there is nothing honest to replace the mock with until it exists, and the mock repository also generates the calendar days themselves. Do it on the decision-engine branch. | 2026-08-23 | Marcus |
 
 ---
 
