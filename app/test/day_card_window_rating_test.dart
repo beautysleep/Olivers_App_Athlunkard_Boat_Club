@@ -86,9 +86,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('06:41'), findsWidgets);
-    expect(
-      find.textContaining('No unbroken 1.5h stretch'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('No unbroken 1.5h stretch'), findsOneWidget);
   });
 }

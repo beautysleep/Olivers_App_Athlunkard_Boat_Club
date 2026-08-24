@@ -380,7 +380,9 @@ class _DayCardState extends State<DayCard> {
 
     // The engine rates each tide separately, so a windy morning does not have
     // to take a calm evening down with it.
-    final verdict = widget.liveDayRating?.forHighTide(window.highTide.localTime);
+    final verdict = widget.liveDayRating?.forHighTide(
+      window.highTide.localTime,
+    );
     if (verdict != null && verdict.conditions == Conditions.red) {
       return _ruledOutWindow(time, verdict);
     }
