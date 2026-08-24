@@ -38,7 +38,9 @@ void main() {
 
       expect(session.status, SessionStatus.confirmed);
       expect(
-        s.notifications().any((n) => n.type == NotificationType.sessionConfirmed),
+        s.notifications().any(
+          (n) => n.type == NotificationType.sessionConfirmed,
+        ),
         true,
       );
     });
@@ -47,9 +49,11 @@ void main() {
       final s = AppState(MockClubRepository());
       s.login('coach@athlunkard.club', demoPassword);
 
-      final day = s.upcomingDays().firstWhere((d) =>
-          d.conditionRating == Conditions.green &&
-          s.sessionsForDate(d.date).isEmpty);
+      final day = s.upcomingDays().firstWhere(
+        (d) =>
+            d.conditionRating == Conditions.green &&
+            s.sessionsForDate(d.date).isEmpty,
+      );
       final window = _highTideOn(day.date, hour: 6, minute: 41);
       final meetAt = DateTime(day.date.year, day.date.month, day.date.day, 6);
 
@@ -64,9 +68,11 @@ void main() {
       final s = AppState(MockClubRepository());
       s.login('coach@athlunkard.club', demoPassword);
 
-      final day = s.upcomingDays().firstWhere((d) =>
-          d.conditionRating == Conditions.green &&
-          s.sessionsForDate(d.date).isEmpty);
+      final day = s.upcomingDays().firstWhere(
+        (d) =>
+            d.conditionRating == Conditions.green &&
+            s.sessionsForDate(d.date).isEmpty,
+      );
       final window = _highTideOn(day.date, hour: 6, minute: 41);
       final meetAt = DateTime(day.date.year, day.date.month, day.date.day, 6);
 
@@ -83,9 +89,11 @@ void main() {
       final s = AppState(MockClubRepository());
       s.login('coach@athlunkard.club', demoPassword);
 
-      final day = s.upcomingDays().firstWhere((d) =>
-          d.conditionRating == Conditions.green &&
-          s.sessionsForDate(d.date).isEmpty);
+      final day = s.upcomingDays().firstWhere(
+        (d) =>
+            d.conditionRating == Conditions.green &&
+            s.sessionsForDate(d.date).isEmpty,
+      );
       final morning = _highTideOn(day.date, hour: 7, minute: 15);
       final evening = _highTideOn(day.date, hour: 19, minute: 40);
 
@@ -93,7 +101,10 @@ void main() {
       s.sendProposal(day, evening, meetingTime: evening.localTime);
 
       final sessions = s.sessionsForDate(day.date);
-      expect(sessions.map((x) => x.meetingTime), [morning.localTime, evening.localTime]);
+      expect(sessions.map((x) => x.meetingTime), [
+        morning.localTime,
+        evening.localTime,
+      ]);
 
       s.logout();
       s.login('saoirse@athlunkard.club', demoPassword);
@@ -121,8 +132,10 @@ void main() {
       // Seed data has Cian (the child) committed to s_day5.
       final visible = s.sessionsForCurrentUser();
       expect(visible.any((x) => x.id == 's_day5'), true);
-      expect(visible.every((x) => x.committedAthletes.any((a) => a.id == 'u_cian')),
-          true);
+      expect(
+        visible.every((x) => x.committedAthletes.any((a) => a.id == 'u_cian')),
+        true,
+      );
     });
   });
 }

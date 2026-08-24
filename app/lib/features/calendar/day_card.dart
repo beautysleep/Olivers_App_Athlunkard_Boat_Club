@@ -15,19 +15,12 @@ import '../../services/weather_conditions.dart';
 import '../../shared/condition_style.dart';
 import '../../shared/formatting.dart';
 
-/// A metric row's visual treatment.
-///
-/// [unknown] is distinct from [danger]: it means live data arrived but couldn't
-/// be classified (e.g. the water-release PDF's discharge sentence didn't match
-/// any phrasing ever observed) — a real gap to flag, not a confirmed override.
-///
-/// [missing] means no live data reached us at all. It is deliberately NOT a
-/// fallback to mock values: a plausible-looking number the coach cannot tell
-/// apart from a real reading destroys trust in every other number on the card.
+/// [unknown] is live data that could not be classified; [missing] is no live
+/// data at all. Neither ever falls back to a mock value: a plausible-looking
+/// number the coach cannot tell from a real reading discredits every other
+/// number on the card.
 enum MetricStatus { normal, live, danger, unknown, missing }
 
-/// A calendar day as a flip card: the colour-coded front shows the rating; tap
-/// to flip and reveal the metrics behind the call (plus the coach's actions).
 class DayCard extends StatefulWidget {
   const DayCard({
     super.key,
@@ -46,25 +39,16 @@ class DayCard extends StatefulWidget {
 
   final DayConditions day;
 
-  /// Each rowable window for the day (in daylight, at/above the height
-  /// threshold) with whatever session has been proposed for it. A day can have
-  /// two, each committable on its own. null = no live tide or daylight data;
-  /// an empty list = live data but no rowable window that day. Either way there
-  /// is no window to offer, so no proposal is possible.
+  /// Null means no live tide or daylight data; empty means live data but
+  /// nothing rowable. Either way there is no window, so nothing to propose.
   final List<HighTideSession>? offerableSessions;
 
-  /// Sessions already proposed for this day that no offerable window covers.
-  /// They keep their commitments and stay actionable, so the card shows them
-  /// even though it can no longer offer that time as a fresh proposal.
+  /// Their commitments are real even though that time can no longer be offered
+  /// as a fresh proposal, so the card still shows them.
   final List<Session> sessionsWithoutAWindow;
 
-  /// Live daily weather (km/h wind, mm rain) for this day, or null → show mock.
   final LiveWeather? liveWeather;
-
-  /// Live water-release status (global, not per-day), or null → "No data".
   final LiveWaterRelease? liveWaterRelease;
-
-  /// Live daylight bounds for this day, or null → "No data".
   final LiveDaylight? liveDaylight;
   final bool unavailable;
   final UserRole role;
@@ -101,7 +85,9 @@ class _DayCardState extends State<DayCard> {
     }
     if (sessions.isNotEmpty) return 'Cancelled';
     if (widget.unavailable) return 'Unavailable';
-    return widget.day.conditionRating == Conditions.red ? 'No row' : 'Available';
+    return widget.day.conditionRating == Conditions.red
+        ? 'No row'
+        : 'Available';
   }
 
   @override
@@ -132,10 +118,9 @@ class _DayCardState extends State<DayCard> {
     );
   }
 
-  /// 300 logical px on a ~360px-wide phone deliberately shows about 1.2 cards
-  /// at a time. Fitting two cards meant every live value ellipsised away, and
-  /// while the club is still learning to trust the automated call, showing the
-  /// evidence in full matters more than showing more days at once.
+  /// 300px shows about 1.2 cards on a ~360px phone. Fitting two ellipsised
+  /// every live value away, and while the club is still learning to trust the
+  /// automated call, the evidence matters more than the extra day.
   Widget _shell({required Widget child}) => SizedBox(
     width: 300,
     height: 320,
@@ -241,11 +226,10 @@ class _DayCardState extends State<DayCard> {
     );
   }
 
-  /// Sources behind the numbers above, placed below the actions so it never
-  /// competes with them — the coach scrolls to it only when they want to check.
-  /// Shows ESB's own sentence verbatim plus a link to the document it came
-  /// from: a new user's first question is "where did that come from?", and
-  /// they should be able to go and look rather than take the app's word.
+  /// Below the actions so it never competes with them. ESB's own sentence runs
+  /// verbatim next to a link to the document: the first question a new user
+  /// asks is "where did that come from?", and they should be able to go and
+  /// look rather than take the app's word.
   List<Widget> _additionalInformation() {
     final w = widget.liveWaterRelease;
     if (w == null) return const [];
@@ -287,9 +271,8 @@ class _DayCardState extends State<DayCard> {
     ];
   }
 
-  /// A source as a tappable link. Opens in the external browser rather than an
-  /// in-app view: esbhydro.ie is plain HTTP with no HTTPS listener, which
-  /// Android's default cleartext policy blocks in a webview.
+  /// External browser, not a webview: esbhydro.ie is plain HTTP with no HTTPS
+  /// listener, which Android's default cleartext policy blocks.
   Widget _sourceLink(String label, String? url) {
     if (url == null) {
       return Text(
@@ -328,9 +311,9 @@ class _DayCardState extends State<DayCard> {
       mode: LaunchMode.externalApplication,
     );
     if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open $url')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not open $url')));
     }
   }
 
@@ -354,9 +337,7 @@ class _DayCardState extends State<DayCard> {
     ];
   }
 
-  /// The action for one rowable window: open the session proposed for it, or —
-  /// for a coach on a day they can still row — propose one. Null when there is
-  /// nothing this viewer can do with the window.
+  /// Null when there is nothing this viewer can do with the window.
   Widget? _windowAction(HighTideSession window, bool nameWindowsByTime) {
     final time = formatTime(window.highTide.localTime);
     final session = window.session;
@@ -376,9 +357,6 @@ class _DayCardState extends State<DayCard> {
     );
   }
 
-  /// Rowing does not start at high water — the crew meets beforehand, and how
-  /// long beforehand is the coach's judgement about the session they have in
-  /// mind, so the app offers the half-hour marks rather than deciding.
   Future<void> _chooseMeetingTime(LiveHighTide highTide) async {
     final chosen = await showModalBottomSheet<DateTime>(
       context: context,
@@ -427,9 +405,8 @@ class _DayCardState extends State<DayCard> {
     ),
   );
 
-  /// The action that belongs to the whole day rather than to a window. The
-  /// coach's own availability is one of these: it holds even on a day with no
-  /// rowable window at all, which is why it does not sit behind one.
+  /// The coach's own availability holds even on a day with no rowable window,
+  /// which is why it does not sit behind one.
   Widget? _dayAction({required bool nothingOfferedForAWindow}) {
     if (widget.role != UserRole.coach) {
       if (!nothingOfferedForAWindow) return null;
@@ -450,10 +427,8 @@ class _DayCardState extends State<DayCard> {
   Widget _fullWidth(Widget child) =>
       SizedBox(width: double.infinity, child: child);
 
-  Widget _note(String text) => Text(
-    text,
-    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-  );
+  Widget _note(String text) =>
+      Text(text, style: TextStyle(fontSize: 12, color: Colors.grey.shade600));
 
   List<Widget> _highTideRows() {
     final windows = widget.offerableSessions;
@@ -482,65 +457,57 @@ class _DayCardState extends State<DayCard> {
     ];
   }
 
-  /// Wind in km/h — live when available (green dot), else the mock value
-  /// converted from knots. km/h matches the row/no-row wind thresholds.
   Widget _windRow() {
-    final w = widget.liveWeather;
-    if (w == null) return _missing(Icons.air, 'Wind');
+    final weather = widget.liveWeather;
+    if (weather == null) return _missing(Icons.air, 'Wind');
     return _metric(
       Icons.air,
       'Wind',
-      '${w.windKmh.round()} km/h',
+      '${weather.windKmh.round()} km/h',
       status: MetricStatus.live,
     );
   }
 
-  /// Rainfall in mm — live when available (green dot), else the mock value.
   Widget _rainRow() {
-    final w = widget.liveWeather;
-    if (w == null) return _missing(Icons.water_drop, 'Rain');
+    final weather = widget.liveWeather;
+    if (weather == null) return _missing(Icons.water_drop, 'Rain');
     return _metric(
       Icons.water_drop,
       'Rain',
-      '${w.rainMm.toStringAsFixed(1)} mm',
+      '${weather.rainMm.toStringAsFixed(1)} mm',
       status: MetricStatus.live,
     );
   }
 
-  /// Water release (ESB Parteen Weir) — live when available: red when ESB
-  /// expects a discharge (the hard override), green when it expects none,
-  /// amber when the wording matched neither and so was never guessed either
-  /// way (see functions/water_release/README.md). The wording itself lives on
-  /// LiveWaterRelease.summaryLabel. Otherwise the mock override.
+  /// Amber is the case where ESB's wording matched no phrasing we have ever
+  /// observed, so it was never guessed either way — see
+  /// functions/water_release/README.md.
   Widget _waterReleaseRow() {
-    final w = widget.liveWaterRelease;
-    if (w == null) return _missing(Icons.dangerous, 'Water release');
+    final waterRelease = widget.liveWaterRelease;
+    if (waterRelease == null) return _missing(Icons.dangerous, 'Water release');
     return _metric(
       Icons.dangerous,
       'Water release',
-      w.summaryLabel,
-      status: switch (w) {
-        _ when w.isDischarging => MetricStatus.danger,
-        _ when w.isClear => MetricStatus.live,
+      waterRelease.summaryLabel,
+      status: switch (waterRelease) {
+        _ when waterRelease.isDischarging => MetricStatus.danger,
+        _ when waterRelease.isClear => MetricStatus.live,
         _ => MetricStatus.unknown,
       },
     );
   }
 
-  /// A metric with no live data behind it. Says so, rather than showing a mock
-  /// value that reads as real.
   Widget _missing(IconData icon, String label) =>
       _metric(icon, label, 'No data', status: MetricStatus.missing);
 
-  /// Daylight bounds — live from the weather forecast (OpenWeather returns
-  /// sunrise/sunset on its daily records), or "No data" beyond its horizon.
   Widget _daylightRow() {
-    final d = widget.liveDaylight;
-    if (d == null) return _missing(Icons.wb_sunny, 'Daylight');
+    final daylight = widget.liveDaylight;
+    if (daylight == null) return _missing(Icons.wb_sunny, 'Daylight');
     return _metric(
       Icons.wb_sunny,
       'Daylight',
-      '${formatTime(d.localSunrise)}–${formatTime(d.localSunset)}',
+      '${formatTime(daylight.localSunrise)}–'
+          '${formatTime(daylight.localSunset)}',
       status: MetricStatus.live,
     );
   }
@@ -576,10 +543,9 @@ class _DayCardState extends State<DayCard> {
         children: [
           Icon(icon, size: 16, color: iconColor),
           const SizedBox(width: 6),
-          // Loose fit, and a smaller share than the value: the label is a
-          // fixed short word but the value carries live data that must not be
-          // ellipsised away (a truncated "No row · 55–170 m³/s" loses the
-          // number entirely). Expanded here would tightly claim half the row.
+          // A smaller share than the value, and loose: the label is a fixed
+          // short word, while the value carries live data that must not be
+          // ellipsised (a truncated "No row · 55–170 m³/s" loses the number).
           Flexible(
             flex: 2,
             child: Text(

@@ -78,8 +78,10 @@ LiveWaterRelease? liveWaterReleaseFromDocument(Map<String, dynamic>? doc) {
   return LiveWaterRelease(
     classification: classification,
     statementRaw: (forecast['discharge_statement_raw'] as String?) ?? '',
-    expectedMinM3s: (forecast['expected_discharge_min_m3s'] as num?)?.toDouble(),
-    expectedMaxM3s: (forecast['expected_discharge_max_m3s'] as num?)?.toDouble(),
+    expectedMinM3s: (forecast['expected_discharge_min_m3s'] as num?)
+        ?.toDouble(),
+    expectedMaxM3s: (forecast['expected_discharge_max_m3s'] as num?)
+        ?.toDouble(),
     sourceUrl: forecast['source_url'] as String?,
   );
 }

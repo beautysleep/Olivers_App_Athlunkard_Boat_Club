@@ -54,7 +54,10 @@ void main() {
     test('leaves a window unproposed when no session sits at its time', () {
       final morning = _highTide(7);
 
-      final byHighTide = sessionsByHighTide([morning], [_sessionAt(_highTide(19).localTime)]);
+      final byHighTide = sessionsByHighTide(
+        [morning],
+        [_sessionAt(_highTide(19).localTime)],
+      );
 
       expect(byHighTide.single.session, isNull);
     });

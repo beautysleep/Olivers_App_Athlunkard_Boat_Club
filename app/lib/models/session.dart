@@ -4,11 +4,7 @@ enum Conditions { green, amber, red }
 
 /// Deterioration never auto-cancels. A worsening forecast routes the coach here
 /// to choose, which is why there is no separate cancellation path.
-enum SessionLifecycle {
-  proposed,
-  cancelledWeatherPivot,
-  cancelledOutright,
-}
+enum SessionLifecycle { proposed, cancelledWeatherPivot, cancelledOutright }
 
 enum SessionStatus { notYetPossible, confirmed }
 

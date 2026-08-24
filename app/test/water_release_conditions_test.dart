@@ -32,9 +32,7 @@ void main() {
 
     test('a document with no source URL yields null, not a guessed one', () {
       final w = liveWaterReleaseFromDocument({
-        'parteen_forecast': {
-          'discharge_classification': kNoDischargeExpected,
-        },
+        'parteen_forecast': {'discharge_classification': kNoDischargeExpected},
       });
       expect(w!.sourceUrl, isNull);
     });

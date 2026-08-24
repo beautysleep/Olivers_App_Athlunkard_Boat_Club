@@ -11,9 +11,11 @@ void main() {
 
   group('liveWeatherFromDaily', () {
     test('maps fields and converts wind + gust to km/h', () {
-      final w = liveWeatherFromDaily(
-        {'wind_speed_ms': 5.0, 'wind_gust_ms': 10.0, 'rain_mm': 1.2},
-      );
+      final w = liveWeatherFromDaily({
+        'wind_speed_ms': 5.0,
+        'wind_gust_ms': 10.0,
+        'rain_mm': 1.2,
+      });
       expect(w, isNotNull);
       expect(w!.windKmh, closeTo(18.0, 1e-9));
       expect(w.gustKmh, closeTo(36.0, 1e-9));
@@ -21,7 +23,10 @@ void main() {
     });
 
     test('absent gust stays null (4.0 daily omits it)', () {
-      final w = liveWeatherFromDaily({'wind_speed_ms': 4.0, 'wind_gust_ms': null});
+      final w = liveWeatherFromDaily({
+        'wind_speed_ms': 4.0,
+        'wind_gust_ms': null,
+      });
       expect(w!.gustKmh, isNull);
     });
 

@@ -10,7 +10,11 @@ void main() {
         'sunset': DateTime.utc(2026, 8, 24, 20, 45),
       });
       expect(d, isNotNull);
-      expect(d!.localSunrise.isUtc, isFalse, reason: 'converted to local for display');
+      expect(
+        d!.localSunrise.isUtc,
+        isFalse,
+        reason: 'converted to local for display',
+      );
       expect(d.localSunset.difference(d.localSunrise).inHours, 15);
     });
 

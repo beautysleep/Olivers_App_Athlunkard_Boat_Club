@@ -4,24 +4,31 @@ import 'package:athlunkard_boat_club/models/session.dart';
 import 'package:athlunkard_boat_club/models/user_profile.dart';
 
 const _coach = UserProfile(
-    id: 'c', displayName: 'Coach', email: 'c@x', role: UserRole.coach);
+  id: 'c',
+  displayName: 'Coach',
+  email: 'c@x',
+  role: UserRole.coach,
+);
 
 UserProfile _athlete(int i) => UserProfile(
-    id: 'a$i', displayName: 'A $i', email: 'a$i@x', role: UserRole.athlete);
+  id: 'a$i',
+  displayName: 'A $i',
+  email: 'a$i@x',
+  role: UserRole.athlete,
+);
 
 Session _session({
   required int athletes,
   SessionLifecycle lifecycle = SessionLifecycle.proposed,
-}) =>
-    Session(
-      id: 's',
-      meetingTime: DateTime(2026, 7, 4, 6, 30),
-      highTideTime: DateTime(2026, 7, 4, 7, 15),
-      conditionRating: Conditions.green,
-      coach: _coach,
-      committedAthletes: List.generate(athletes, _athlete),
-      lifecycle: lifecycle,
-    );
+}) => Session(
+  id: 's',
+  meetingTime: DateTime(2026, 7, 4, 6, 30),
+  highTideTime: DateTime(2026, 7, 4, 7, 15),
+  conditionRating: Conditions.green,
+  coach: _coach,
+  committedAthletes: List.generate(athletes, _athlete),
+  lifecycle: lifecycle,
+);
 
 void main() {
   group('Session.status', () {
@@ -35,7 +42,9 @@ void main() {
 
     test('cancelled outright -> coach not committed -> not yet possible', () {
       final s = _session(
-          athletes: 5, lifecycle: SessionLifecycle.cancelledOutright);
+        athletes: 5,
+        lifecycle: SessionLifecycle.cancelledOutright,
+      );
       expect(s.isCancelled, true);
       expect(s.coachCommitted, false);
       expect(s.status, SessionStatus.notYetPossible);

@@ -54,36 +54,35 @@ void main() {
     });
   });
 
-    test('the daylight edge offset can widen the window', () {
-      // A high tide 20 minutes before sunrise: excluded at the default edge,
-      // included once the coaches allow launching in pre-dawn light.
-      final sunrise = DateTime(2026, 8, 24, 6, 0);
-      final sunset = DateTime(2026, 8, 24, 20, 0);
-      final justBeforeSunrise = [
-        LiveHighTide(localTime: DateTime(2026, 8, 24, 5, 40), heightMetres: 4.5),
-      ];
+  test('the daylight edge offset can widen the window', () {
+    // A high tide 20 minutes before sunrise: excluded at the default edge,
+    // included once the coaches allow launching in pre-dawn light.
+    final sunrise = DateTime(2026, 8, 24, 6, 0);
+    final sunset = DateTime(2026, 8, 24, 20, 0);
+    final justBeforeSunrise = [
+      LiveHighTide(localTime: DateTime(2026, 8, 24, 5, 40), heightMetres: 4.5),
+    ];
 
-      expect(
-        offerableHighTides(
-          justBeforeSunrise,
-          localSunrise: sunrise,
-          localSunset: sunset,
-        ),
-        isEmpty,
-      );
-      expect(
-        offerableHighTides(
-          justBeforeSunrise,
-          localSunrise: sunrise,
-          localSunset: sunset,
-          daylightEdgeOffsetMinutes: 30,
-        ),
-        hasLength(1),
-      );
-    });
+    expect(
+      offerableHighTides(
+        justBeforeSunrise,
+        localSunrise: sunrise,
+        localSunset: sunset,
+      ),
+      isEmpty,
+    );
+    expect(
+      offerableHighTides(
+        justBeforeSunrise,
+        localSunrise: sunrise,
+        localSunset: sunset,
+        daylightEdgeOffsetMinutes: 30,
+      ),
+      hasLength(1),
+    );
+  });
 
-    test('the default edge offset is zero — no guessed twilight allowance', () {
-      expect(kDaylightEdgeOffsetMinutes, 0);
-    });
-
+  test('the default edge offset is zero — no guessed twilight allowance', () {
+    expect(kDaylightEdgeOffsetMinutes, 0);
+  });
 }

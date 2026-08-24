@@ -58,7 +58,8 @@ class AppState extends ChangeNotifier {
 
   List<DayConditions> upcomingDays() => _repository.upcomingDays();
   Set<DateTime> coachUnavailableDays() => _repository.coachUnavailableDays();
-  List<Session> sessionsForDate(DateTime date) => _repository.sessionsForDate(date);
+  List<Session> sessionsForDate(DateTime date) =>
+      _repository.sessionsForDate(date);
 
   /// Every live source is optional: without it the day card says "No data",
   /// which must not become the whole app failing to start.
@@ -93,10 +94,7 @@ class AppState extends ChangeNotifier {
     final highs = liveHighTidesFor(day.date);
     final daylight = liveDaylightFor(day.date);
     if (highs.isEmpty || daylight == null) {
-      return (
-        offerableWindows: null,
-        sessionsWithoutAWindow: sessionsThatDay,
-      );
+      return (offerableWindows: null, sessionsWithoutAWindow: sessionsThatDay);
     }
     final offerable = offerableHighTides(
       highs,

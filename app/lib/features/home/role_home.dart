@@ -28,20 +28,30 @@ class _RoleHomeState extends State<RoleHome> {
   int _index = 0;
 
   List<_Tab> _tabsFor(UserRole role) {
-    const calendar = _Tab(Icons.calendar_today_outlined,
-        Icons.calendar_today, 'Calendar', CalendarScreen());
-    const sessions = _Tab(Icons.directions_boat_outlined,
-        Icons.directions_boat, 'Sessions', UpcomingSessionsScreen());
-    const alerts = _Tab(Icons.notifications_outlined, Icons.notifications,
-        'Alerts', NotificationsScreen());
+    const calendar = _Tab(
+      Icons.calendar_today_outlined,
+      Icons.calendar_today,
+      'Calendar',
+      CalendarScreen(),
+    );
+    const sessions = _Tab(
+      Icons.directions_boat_outlined,
+      Icons.directions_boat,
+      'Sessions',
+      UpcomingSessionsScreen(),
+    );
+    const alerts = _Tab(
+      Icons.notifications_outlined,
+      Icons.notifications,
+      'Alerts',
+      NotificationsScreen(),
+    );
 
     switch (role) {
       case UserRole.coach:
       case UserRole.athlete:
         return const [calendar, sessions, alerts];
       case UserRole.parent:
-        // Parent's main use is notifications; sessions tab is read-only
-        // visibility into the child's sessions.
         return const [alerts, sessions];
     }
   }

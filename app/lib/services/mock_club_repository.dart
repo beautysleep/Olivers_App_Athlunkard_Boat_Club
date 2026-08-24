@@ -68,14 +68,7 @@ class MockClubRepository implements ClubRepository {
     childId: 'u_cian',
   );
 
-  static const _athletes = [
-    _saoirse,
-    _aoife,
-    _cian,
-    _darragh,
-    _meabh,
-    _conor,
-  ];
+  static const _athletes = [_saoirse, _aoife, _cian, _darragh, _meabh, _conor];
   static const _allAccounts = [_coach, ..._athletes, _parent];
 
   // --- Storage -------------------------------------------------------------
@@ -109,28 +102,45 @@ class MockClubRepository implements ClubRepository {
       required double rain,
       required double tideHeight,
       bool waterRelease = false,
-    }) =>
-        DayConditions(
-          date: _at(o, 0, 0),
-          conditionRating: c,
-          highTideTime: tide(o),
-          highTideHeightMetres: tideHeight,
-          windKnots: wind,
-          rainfallMm: rain,
-          waterReleaseActive: waterRelease,
-          localSunrise: sunrise(o),
-          localSunset: sunset(o),
-        );
+    }) => DayConditions(
+      date: _at(o, 0, 0),
+      conditionRating: c,
+      highTideTime: tide(o),
+      highTideHeightMetres: tideHeight,
+      windKnots: wind,
+      rainfallMm: rain,
+      waterReleaseActive: waterRelease,
+      localSunrise: sunrise(o),
+      localSunset: sunset(o),
+    );
 
     _days.addAll([
       day(0, Conditions.amber, wind: 12, rain: 0.5, tideHeight: 4.1),
       day(1, Conditions.red, wind: 23, rain: 5.5, tideHeight: 4.3), // pivoted
-      day(2, Conditions.amber, wind: 14, rain: 1.2, tideHeight: 4.0), // gathering
+      day(
+        2,
+        Conditions.amber,
+        wind: 14,
+        rain: 1.2,
+        tideHeight: 4.0,
+      ), // gathering
       day(3, Conditions.red, wind: 26, rain: 7.0, tideHeight: 3.8), // too windy
       day(4, Conditions.green, wind: 5, rain: 0.0, tideHeight: 4.4),
-      day(5, Conditions.green, wind: 8, rain: 0.2, tideHeight: 4.5), // confirmed
-      day(6, Conditions.red, wind: 11, rain: 2.0, tideHeight: 4.2,
-          waterRelease: true), // water-release override
+      day(
+        5,
+        Conditions.green,
+        wind: 8,
+        rain: 0.2,
+        tideHeight: 4.5,
+      ), // confirmed
+      day(
+        6,
+        Conditions.red,
+        wind: 11,
+        rain: 2.0,
+        tideHeight: 4.2,
+        waterRelease: true,
+      ), // water-release override
       day(7, Conditions.amber, wind: 13, rain: 0.8, tideHeight: 4.0),
       day(8, Conditions.green, wind: 7, rain: 0.0, tideHeight: 4.3),
       day(9, Conditions.amber, wind: 15, rain: 1.5, tideHeight: 3.9),
@@ -140,36 +150,42 @@ class MockClubRepository implements ClubRepository {
     _unavailable.add(_dateOnly(_at(8, 0, 0)));
 
     // A session mid-flight on day 2: 3 committed, needs 1 more.
-    _sessions.add(Session(
-      id: 's_day2',
-      meetingTime: tide(2),
-      highTideTime: tide(2),
-      conditionRating: Conditions.amber,
-      coach: _coach,
-      committedAthletes: [_aoife, _cian, _darragh],
-    ));
+    _sessions.add(
+      Session(
+        id: 's_day2',
+        meetingTime: tide(2),
+        highTideTime: tide(2),
+        conditionRating: Conditions.amber,
+        coach: _coach,
+        committedAthletes: [_aoife, _cian, _darragh],
+      ),
+    );
 
     // A confirmed session on day 5: 5 committed (>= minimum of 4).
-    _sessions.add(Session(
-      id: 's_day5',
-      meetingTime: tide(5),
-      highTideTime: tide(5),
-      conditionRating: Conditions.green,
-      coach: _coach,
-      committedAthletes: [_aoife, _meabh, _conor, _cian, _darragh],
-    ));
+    _sessions.add(
+      Session(
+        id: 's_day5',
+        meetingTime: tide(5),
+        highTideTime: tide(5),
+        conditionRating: Conditions.green,
+        coach: _coach,
+        committedAthletes: [_aoife, _meabh, _conor, _cian, _darragh],
+      ),
+    );
 
     // A session proposed for day 1 that the coach pivoted to land as the
     // forecast turned red.
-    _sessions.add(Session(
-      id: 's_pivot',
-      meetingTime: tide(1),
-      highTideTime: tide(1),
-      conditionRating: Conditions.amber,
-      coach: _coach,
-      committedAthletes: [_aoife, _cian],
-      lifecycle: SessionLifecycle.cancelledWeatherPivot,
-    ));
+    _sessions.add(
+      Session(
+        id: 's_pivot',
+        meetingTime: tide(1),
+        highTideTime: tide(1),
+        conditionRating: Conditions.amber,
+        coach: _coach,
+        committedAthletes: [_aoife, _cian],
+        lifecycle: SessionLifecycle.cancelledWeatherPivot,
+      ),
+    );
 
     // Seed notifications so each inbox isn't empty on first login.
     _notifications.addAll([
@@ -259,9 +275,8 @@ class MockClubRepository implements ClubRepository {
 
   @override
   List<AppNotification> notificationsForUser(String userId) {
-    final mine =
-        _notifications.where((n) => n.recipientId == userId).toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final mine = _notifications.where((n) => n.recipientId == userId).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return List.unmodifiable(mine);
   }
 

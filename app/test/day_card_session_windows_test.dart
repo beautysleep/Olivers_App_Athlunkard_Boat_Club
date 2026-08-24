@@ -129,7 +129,10 @@ void main() {
     ) async {
       await tester.pumpWidget(
         _card(
-          sessionsByHighTide([_morning, _evening], [_sessionAt(_morning.localTime)]),
+          sessionsByHighTide(
+            [_morning, _evening],
+            [_sessionAt(_morning.localTime)],
+          ),
         ),
       );
       await _flipToBack(tester);
