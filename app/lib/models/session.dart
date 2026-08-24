@@ -46,6 +46,7 @@ class Session {
   Session({
     required this.id,
     required this.date,
+    required this.highTideTime,
     required this.conditions,
     required this.coach,
     required this.committedAthletes,
@@ -57,6 +58,11 @@ class Session {
 
   /// The day/time the session is proposed for.
   final DateTime date;
+
+  /// The high tide this session rows on. A day has two, each committable on its
+  /// own, and this is what tells them apart — [date] cannot, because the coach
+  /// picks a meeting time before the tide rather than at it.
+  final DateTime highTideTime;
 
   /// Planning-level condition rating captured when the session was proposed.
   final Conditions conditions;

@@ -7,6 +7,8 @@ import '../../models/day_conditions.dart';
 import '../../models/session.dart';
 import '../../models/user_profile.dart';
 import '../../services/daylight_conditions.dart';
+import '../../services/meeting_times.dart';
+import '../../services/session_windows.dart';
 import '../../services/tide_windows.dart';
 import '../../services/water_release_conditions.dart';
 import '../../services/weather_conditions.dart';
@@ -30,25 +32,31 @@ class DayCard extends StatefulWidget {
   const DayCard({
     super.key,
     required this.day,
-    required this.session,
     required this.unavailable,
     required this.role,
     required this.onSendProposal,
     required this.onMarkUnavailable,
     required this.onOpenSession,
-    this.offerableHighTides,
+    this.offerableSessions,
+    this.sessionsWithoutAWindow = const [],
     this.liveWeather,
     this.liveWaterRelease,
     this.liveDaylight,
   });
 
   final DayConditions day;
-  final Session? session;
 
-  /// Offerable high-tide sessions from live data (in daylight and at/above the
-  /// height threshold). A day can have two. null = no live data (show mock);
-  /// an empty list = live data but no rowable window that day.
-  final List<LiveHighTide>? offerableHighTides;
+  /// Each rowable window for the day (in daylight, at/above the height
+  /// threshold) with whatever session has been proposed for it. A day can have
+  /// two, each committable on its own. null = no live tide or daylight data;
+  /// an empty list = live data but no rowable window that day. Either way there
+  /// is no window to offer, so no proposal is possible.
+  final List<HighTideSession>? offerableSessions;
+
+  /// Sessions already proposed for this day that no offerable window covers.
+  /// They keep their commitments and stay actionable, so the card shows them
+  /// even though it can no longer offer that time as a fresh proposal.
+  final List<Session> sessionsWithoutAWindow;
 
   /// Live daily weather (km/h wind, mm rain) for this day, or null → show mock.
   final LiveWeather? liveWeather;
@@ -60,9 +68,10 @@ class DayCard extends StatefulWidget {
   final LiveDaylight? liveDaylight;
   final bool unavailable;
   final UserRole role;
-  final VoidCallback onSendProposal;
+  final void Function(LiveHighTide highTide, DateTime meetingTime)
+  onSendProposal;
   final VoidCallback onMarkUnavailable;
-  final VoidCallback onOpenSession;
+  final void Function(Session session) onOpenSession;
 
   @override
   State<DayCard> createState() => _DayCardState();
@@ -71,15 +80,26 @@ class DayCard extends StatefulWidget {
 class _DayCardState extends State<DayCard> {
   bool _showBack = false;
 
+  List<HighTideSession> get _windows =>
+      widget.offerableSessions ?? const <HighTideSession>[];
+
+  List<Session> get _proposedSessions => [
+    for (final window in _windows) ?window.session,
+    ...widget.sessionsWithoutAWindow,
+  ];
+
   String _statusBadge() {
-    final s = widget.session;
-    if (s != null) {
-      if (s.lifecycle == SessionLifecycle.cancelledWeatherPivot) {
-        return 'Land training';
-      }
-      if (s.lifecycle == SessionLifecycle.cancelledOutright) return 'Cancelled';
-      return s.status == SessionStatus.confirmed ? 'Confirmed' : 'Proposed';
+    final sessions = _proposedSessions;
+    if (sessions.any((s) => s.status == SessionStatus.confirmed)) {
+      return 'Confirmed';
     }
+    if (sessions.any((s) => !s.isCancelled)) return 'Proposed';
+    if (sessions.any(
+      (s) => s.lifecycle == SessionLifecycle.cancelledWeatherPivot,
+    )) {
+      return 'Land training';
+    }
+    if (sessions.isNotEmpty) return 'Cancelled';
     if (widget.unavailable) return 'Unavailable';
     return widget.day.conditions == Conditions.red ? 'No row' : 'Available';
   }
@@ -315,73 +335,132 @@ class _DayCardState extends State<DayCard> {
   }
 
   List<Widget> _actions(BuildContext context) {
-    final hasSession = widget.session != null;
-    if (hasSession) {
-      return [
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.tonal(
-            onPressed: widget.onOpenSession,
-            child: const Text('Open session'),
-          ),
-        ),
-      ];
-    }
-    if (widget.role == UserRole.coach) {
-      if (widget.unavailable) {
-        return [
-          Text(
-            "You're marked unavailable",
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-        ];
-      }
-      if (widget.day.conditions == Conditions.red) {
-        return [
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: widget.onMarkUnavailable,
-              child: const Text('Mark unavailable'),
-            ),
-          ),
-        ];
-      }
-      return [
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: widget.onSendProposal,
-            child: const Text('Send proposal'),
-          ),
-        ),
-        const SizedBox(height: 6),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: widget.onMarkUnavailable,
-            child: const Text('Unavailable'),
-          ),
-        ),
-      ];
-    }
-    // Athlete / parent with no session for the day: nothing to do here.
+    final windows = _windows;
+    final stranded = widget.sessionsWithoutAWindow;
+    final nameWindowsByTime = windows.length + stranded.length > 1;
+
+    final actions = <Widget>[
+      for (final window in windows) ?_windowAction(window, nameWindowsByTime),
+      for (final session in stranded) _openSession(session, nameWindowsByTime),
+    ];
+    final dayAction = _dayAction(nothingOfferedForAWindow: actions.isEmpty);
+    if (dayAction != null) actions.add(dayAction);
+
     return [
-      Text(
-        widget.unavailable ? 'No session — coach away' : 'No session proposed',
-        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-      ),
+      for (var i = 0; i < actions.length; i++) ...[
+        if (i > 0) const SizedBox(height: 6),
+        actions[i],
+      ],
     ];
   }
 
-  /// High-tide row(s): live offerable windows (one or two) when available,
-  /// otherwise the mock high tide. A day with two qualifying highs shows two.
+  /// The action for one rowable window: open the session proposed for it, or —
+  /// for a coach on a day they can still row — propose one. Null when there is
+  /// nothing this viewer can do with the window.
+  Widget? _windowAction(HighTideSession window, bool nameWindowsByTime) {
+    final time = formatTime(window.highTide.time);
+    final session = window.session;
+    if (session != null) return _openSession(session, nameWindowsByTime);
+    if (widget.role != UserRole.coach ||
+        widget.unavailable ||
+        widget.day.conditions == Conditions.red) {
+      return null;
+    }
+    return _fullWidth(
+      FilledButton(
+        onPressed: () => _chooseMeetingTime(window.highTide),
+        child: Text(
+          nameWindowsByTime ? 'Propose \u00b7 $time tide' : 'Send proposal',
+        ),
+      ),
+    );
+  }
+
+  /// Rowing does not start at high water — the crew meets beforehand, and how
+  /// long beforehand is the coach's judgement about the session they have in
+  /// mind, so the app offers the half-hour marks rather than deciding.
+  Future<void> _chooseMeetingTime(LiveHighTide highTide) async {
+    final chosen = await showModalBottomSheet<DateTime>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+              child: Text(
+                'Meet at',
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: Text(
+                'High tide ${formatTime(highTide.time)} \u00b7 '
+                'earlier means a longer session',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+            ),
+            for (final meetingTime in meetingTimesBefore(highTide.time))
+              ListTile(
+                leading: const Icon(Icons.schedule),
+                title: Text(formatTime(meetingTime)),
+                onTap: () => Navigator.of(sheetContext).pop(meetingTime),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (chosen != null) widget.onSendProposal(highTide, chosen);
+  }
+
+  Widget _openSession(Session session, bool nameWindowsByTime) => _fullWidth(
+    FilledButton.tonal(
+      onPressed: () => widget.onOpenSession(session),
+      child: Text(
+        nameWindowsByTime
+            ? 'Open ${formatTime(session.date)} session'
+            : 'Open session',
+      ),
+    ),
+  );
+
+  /// The action that belongs to the whole day rather than to a window. The
+  /// coach's own availability is one of these: it holds even on a day with no
+  /// rowable window at all, which is why it does not sit behind one.
+  Widget? _dayAction({required bool nothingOfferedForAWindow}) {
+    if (widget.role != UserRole.coach) {
+      if (!nothingOfferedForAWindow) return null;
+      return _note(
+        widget.unavailable ? 'No session — coach away' : 'No session proposed',
+      );
+    }
+    if (widget.unavailable) return _note("You're marked unavailable");
+    if (_proposedSessions.isNotEmpty) return null;
+    return _fullWidth(
+      OutlinedButton(
+        onPressed: widget.onMarkUnavailable,
+        child: const Text('Mark unavailable'),
+      ),
+    );
+  }
+
+  Widget _fullWidth(Widget child) =>
+      SizedBox(width: double.infinity, child: child);
+
+  Widget _note(String text) => Text(
+    text,
+    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+  );
+
   List<Widget> _highTideRows() {
-    final offer = widget.offerableHighTides;
-    if (offer == null) {
+    final windows = widget.offerableSessions;
+    if (windows == null) {
       return [_missing(Icons.waves, 'High tide')];
     }
-    if (offer.isEmpty) {
+    if (windows.isEmpty) {
       return [
         _metric(
           Icons.waves,
@@ -392,12 +471,12 @@ class _DayCardState extends State<DayCard> {
       ];
     }
     return [
-      for (var i = 0; i < offer.length; i++)
+      for (var i = 0; i < windows.length; i++)
         _metric(
           Icons.waves,
-          offer.length > 1 ? 'High tide ${i + 1}' : 'High tide',
-          '${formatTime(offer[i].time)} · '
-          '${offer[i].heightMetres.toStringAsFixed(1)}m',
+          windows.length > 1 ? 'High tide ${i + 1}' : 'High tide',
+          '${formatTime(windows[i].highTide.time)} · '
+          '${windows[i].highTide.heightMetres.toStringAsFixed(1)}m',
           status: MetricStatus.live,
         ),
     ];

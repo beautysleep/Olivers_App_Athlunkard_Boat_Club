@@ -18,6 +18,7 @@ import 'firestore_tide_repository.dart';
 import 'firestore_water_release_repository.dart';
 import 'firestore_weather_repository.dart';
 import 'daylight_conditions.dart';
+import 'session_windows.dart';
 import 'tide_windows.dart';
 import 'water_release_conditions.dart';
 import 'weather_conditions.dart';
@@ -73,7 +74,7 @@ class AppState extends ChangeNotifier {
   // --- Reads ---------------------------------------------------------------
   List<DayConditions> upcomingDays() => _repo.upcomingDays();
   Set<DateTime> unavailableDays() => _repo.unavailableDays();
-  Session? sessionForDate(DateTime date) => _repo.sessionForDate(date);
+  List<Session> sessionsForDate(DateTime date) => _repo.sessionsForDate(date);
 
   // --- Live tide (Firestore) ----------------------------------------------
   /// Load live tide predictions from Firestore. Failure-tolerant: on any error
@@ -98,21 +99,31 @@ class AppState extends ChangeNotifier {
   /// forecast horizon (the UI then says so rather than inventing a window).
   LiveDaylight? liveDaylightFor(DateTime date) => _liveDaylight[_dateKey(date)];
 
-  /// The offerable high-tide sessions for [day]: highs that fall in daylight and
-  /// are at/above the height threshold. A day can yield two.
-  ///
-  /// Returns null when either input is missing — no live tide for the day, or
-  /// no live daylight to judge it against. Filtering real tides against mock
-  /// daylight would silently produce a wrong answer, so it is not done.
-  List<LiveHighTide>? offerableHighTidesFor(DayConditions day) {
+  /// [DaySessions.offerableWindows] is null when either input is missing — no
+  /// live tide for the day, or no live daylight to judge it against. Filtering
+  /// real tides against mock daylight would silently produce a wrong answer, so
+  /// it is not done, and with no window there is nothing to offer the coach.
+  DaySessions daySessionsFor(DayConditions day) {
+    final sessionsThatDay = sessionsForDate(day.date);
     final highs = liveHighTidesFor(day.date);
-    if (highs.isEmpty) return null;
     final daylight = liveDaylightFor(day.date);
-    if (daylight == null) return null;
-    return offerableHighTides(
+    if (highs.isEmpty || daylight == null) {
+      return (
+        offerableWindows: null,
+        sessionsWithoutAWindow: sessionsThatDay,
+      );
+    }
+    final offerable = offerableHighTides(
       highs,
       sunrise: daylight.sunrise,
       sunset: daylight.sunset,
+    );
+    return (
+      offerableWindows: sessionsByHighTide(offerable, sessionsThatDay),
+      sessionsWithoutAWindow: sessionsWithoutAHighTide(
+        offerable,
+        sessionsThatDay,
+      ),
     );
   }
 
@@ -200,14 +211,18 @@ class AppState extends ChangeNotifier {
   int get notificationCount => notifications().length;
 
   // --- Coach actions -------------------------------------------------------
-  /// Coach proposes a session for [day]; every athlete is notified.
-  void sendProposal(DayConditions day) {
+  void sendProposal(
+    DayConditions day,
+    LiveHighTide highTide, {
+    required DateTime meetingTime,
+  }) {
     final coach = _currentUser;
     if (coach == null || coach.role != UserRole.coach) return;
 
     final session = Session(
       id: _repo.nextId('s'),
-      date: day.highTide,
+      date: meetingTime,
+      highTideTime: highTide.time,
       conditions: day.conditions,
       coach: coach,
       committedAthletes: [],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/session.dart';
 import '../../services/app_scope.dart';
+import '../../shared/formatting.dart';
 import '../sessions/session_detail_screen.dart';
 import 'day_card.dart';
 
@@ -54,34 +55,40 @@ class CalendarScreen extends StatelessWidget {
               separatorBuilder: (_, _) => const SizedBox(width: 12),
               itemBuilder: (context, i) {
                 final day = days[i];
-                final session = appState.sessionForDate(day.date);
                 final isUnavailable = unavailable.contains(_dateOnly(day.date));
+                final daySessions = appState.daySessionsFor(day);
                 return DayCard(
                   day: day,
-                  session: session,
                   unavailable: isUnavailable,
                   role: user.role,
-                  offerableHighTides: appState.offerableHighTidesFor(day),
+                  offerableSessions: daySessions.offerableWindows,
+                  sessionsWithoutAWindow: daySessions.sessionsWithoutAWindow,
                   liveWeather: appState.liveWeatherFor(day.date),
                   liveWaterRelease: appState.liveWaterRelease,
                   liveDaylight: appState.liveDaylightFor(day.date),
-                  onSendProposal: () {
-                    appState.sendProposal(day);
-                    _snack(context, 'Proposal sent to all athletes.');
+                  onSendProposal: (highTide, meetingTime) {
+                    appState.sendProposal(
+                      day,
+                      highTide,
+                      meetingTime: meetingTime,
+                    );
+                    _snack(
+                      context,
+                      'Proposal sent \u2014 meet at '
+                      '${formatTime(meetingTime)}.',
+                    );
                   },
                   onMarkUnavailable: () {
                     appState.markUnavailable(day);
                     _snack(context, "Marked unavailable — won't be proposed.");
                   },
-                  onOpenSession: () {
-                    if (session != null) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              SessionDetailScreen(sessionId: session.id),
-                        ),
-                      );
-                    }
+                  onOpenSession: (session) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            SessionDetailScreen(sessionId: session.id),
+                      ),
+                    );
                   },
                 );
               },

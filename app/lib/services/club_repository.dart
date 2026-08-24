@@ -28,7 +28,7 @@ abstract class ClubRepository {
 
   // --- Sessions ------------------------------------------------------------
   List<Session> sessions();
-  Session? sessionForDate(DateTime date);
+  List<Session> sessionsForDate(DateTime date);
 
   /// Insert or update a session (after a proposal, a commit, or a cancel).
   void upsertSession(Session session);
