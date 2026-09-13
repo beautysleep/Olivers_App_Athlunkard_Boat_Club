@@ -88,4 +88,26 @@ void main() {
     expect(find.textContaining('06:41'), findsWidgets);
     expect(find.textContaining('No unbroken 1.5h stretch'), findsOneWidget);
   });
+
+  testWidgets('a rowable tide shows the window the engine computed for it', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_card());
+    await tester.tap(find.byType(DayCard));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Usable window'), findsNWidgets(2));
+    expect(find.textContaining('16:36–20:36'), findsOneWidget);
+  });
+
+  testWidgets(
+    'a ruled-out tide says so rather than claiming no data was computed',
+    (tester) async {
+      await tester.pumpWidget(_card());
+      await tester.tap(find.byType(DayCard));
+      await tester.pumpAndSettle();
+
+      expect(find.text('not rowable'), findsOneWidget);
+    },
+  );
 }

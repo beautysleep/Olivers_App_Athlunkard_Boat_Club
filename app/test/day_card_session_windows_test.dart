@@ -115,6 +115,7 @@ void main() {
         ),
       );
       await _flipToBack(tester);
+      await tester.ensureVisible(find.text('Propose · 19:40 tide'));
       await tester.tap(find.text('Propose · 19:40 tide'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('18:30'));
