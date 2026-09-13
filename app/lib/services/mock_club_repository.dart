@@ -10,7 +10,6 @@ import '../models/user_profile.dart';
 import 'club_repository.dart';
 
 /// Demo password — every seeded account uses it.
-const demoPassword = 'rowing';
 
 class MockClubRepository implements ClubRepository {
   MockClubRepository() {
@@ -69,7 +68,6 @@ class MockClubRepository implements ClubRepository {
   );
 
   static const _athletes = [_saoirse, _aoife, _cian, _darragh, _meabh, _conor];
-  static const _allAccounts = [_coach, ..._athletes, _parent];
 
   // --- Storage -------------------------------------------------------------
   late DateTime _today;
@@ -229,19 +227,6 @@ class MockClubRepository implements ClubRepository {
   }
 
   // --- ClubRepository ------------------------------------------------------
-  @override
-  List<UserProfile> accounts() => List.unmodifiable(_allAccounts);
-
-  @override
-  UserProfile? authenticate(String email, String password) {
-    final target = email.trim().toLowerCase();
-    if (password != demoPassword) return null;
-    for (final a in _allAccounts) {
-      if (a.email.toLowerCase() == target) return a;
-    }
-    return null;
-  }
-
   @override
   List<DayConditions> upcomingDays() => List.unmodifiable(_days);
 

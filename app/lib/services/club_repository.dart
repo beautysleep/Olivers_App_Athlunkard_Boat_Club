@@ -6,13 +6,8 @@ library;
 import '../models/app_notification.dart';
 import '../models/day_conditions.dart';
 import '../models/session.dart';
-import '../models/user_profile.dart';
 
 abstract class ClubRepository {
-  List<UserProfile> accounts();
-
-  UserProfile? authenticate(String email, String password);
-
   List<DayConditions> upcomingDays();
 
   Set<DateTime> coachUnavailableDays();

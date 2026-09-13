@@ -9,6 +9,8 @@ import 'services/firestore_tide_repository.dart';
 import 'services/firestore_day_rating_repository.dart';
 import 'services/firestore_water_release_repository.dart';
 import 'services/firestore_weather_repository.dart';
+import 'services/firebase_member_directory.dart';
+import 'services/member_directory.dart';
 import 'services/mock_club_repository.dart';
 
 Future<void> main() async {
@@ -18,24 +20,33 @@ Future<void> main() async {
 }
 
 class AthlunkardBoatClubApp extends StatefulWidget {
-  const AthlunkardBoatClubApp({super.key});
+  const AthlunkardBoatClubApp({super.key, this.appState});
+
+  /// Injected by tests so the app can boot without Firebase behind it.
+  final AppState? appState;
 
   @override
   State<AthlunkardBoatClubApp> createState() => _AthlunkardBoatClubAppState();
 }
 
 class _AthlunkardBoatClubAppState extends State<AthlunkardBoatClubApp> {
-  final AppState _appState = AppState(
-    MockClubRepository(),
-    tideRepository: FirestoreTideRepository(),
-    weatherRepository: FirestoreWeatherRepository(),
-    waterReleaseRepository: FirestoreWaterReleaseRepository(),
-    dayRatingRepository: FirestoreDayRatingRepository(),
-  );
+  late final AppState _appState =
+      widget.appState ??
+      AppState(
+        MockClubRepository(),
+        tideRepository: FirestoreTideRepository(),
+        weatherRepository: FirestoreWeatherRepository(),
+        waterReleaseRepository: FirestoreWaterReleaseRepository(),
+        dayRatingRepository: FirestoreDayRatingRepository(),
+        memberDirectory: FirebaseMemberDirectory(
+          membershipEndpoint: Uri.parse(membershipEndpoint),
+        ),
+      );
 
   @override
   void initState() {
     super.initState();
+    _appState.restoreSession();
     _appState.loadLiveTides();
     _appState.loadLiveWeather();
     _appState.loadLiveWaterRelease();

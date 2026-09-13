@@ -36,7 +36,10 @@ Widget _card(LiveDayRating? rating) => MaterialApp(
   ),
 );
 
-LiveDayRating _rating(Conditions? conditions, {List<String> reasons = const []}) =>
+LiveDayRating _rating(
+  Conditions? conditions, {
+  List<String> reasons = const [],
+}) =>
     LiveDayRating(conditions: conditions, reasons: reasons, windows: const []);
 
 void main() {

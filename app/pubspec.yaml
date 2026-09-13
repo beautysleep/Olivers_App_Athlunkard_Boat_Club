@@ -36,6 +36,14 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_core: ^4.11.0
   cloud_firestore: ^6.6.0
+  # Sessions are the first thing the app writes, and a Firestore rule can only
+  # authorise a write against an identity. Official first-party package; there
+  # is no standard-library route to Firebase Auth.
+  firebase_auth: ^6.2.0
+  # Calls the membership function with the signed-in user's ID token. dart:io's
+  # HttpClient would work but not on web, and http is already a transitive
+  # dependency of the Firebase packages.
+  http: ^1.2.0
   url_launcher: ^6.3.2
 
 dev_dependencies:

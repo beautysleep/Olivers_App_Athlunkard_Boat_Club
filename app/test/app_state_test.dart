@@ -2,9 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:athlunkard_boat_club/models/app_notification.dart';
 import 'package:athlunkard_boat_club/models/session.dart';
-import 'package:athlunkard_boat_club/models/user_profile.dart';
 import 'package:athlunkard_boat_club/services/app_state.dart';
 import 'package:athlunkard_boat_club/services/mock_club_repository.dart';
+
+import 'fake_member_directory.dart';
 import 'package:athlunkard_boat_club/services/tide_windows.dart';
 
 LiveHighTide _highTideOn(
@@ -19,35 +20,36 @@ LiveHighTide _highTideOn(
 
 void main() {
   group('AppState use-cases', () {
-    test('login rejects a wrong password and accepts the demo password', () {
-      final s = AppState(MockClubRepository());
-      expect(s.login('coach@athlunkard.club', 'nope'), false);
-      expect(s.isLoggedIn, false);
-      expect(s.login('coach@athlunkard.club', demoPassword), true);
-      expect(s.currentUser?.role, UserRole.coach);
-    });
+    test(
+      'an athlete accepting tips a gathering session to confirmed',
+      () async {
+        final s = AppState(
+          MockClubRepository(),
+          memberDirectory: FakeMemberDirectory(),
+        );
+        await s.login('saoirse@athlunkard.club', fakePassword);
 
-    test('an athlete accepting tips a gathering session to confirmed', () {
-      final s = AppState(MockClubRepository());
-      s.login('saoirse@athlunkard.club', demoPassword);
+        final session = s.sessionById('s_day2')!; // seeded with 3 of 4
+        expect(session.status, SessionStatus.notYetPossible);
 
-      final session = s.sessionById('s_day2')!; // seeded with 3 of 4
-      expect(session.status, SessionStatus.notYetPossible);
+        s.respondToProposal(session, accept: true);
 
-      s.respondToProposal(session, accept: true);
+        expect(session.status, SessionStatus.confirmed);
+        expect(
+          s.notifications().any(
+            (n) => n.type == NotificationType.sessionConfirmed,
+          ),
+          true,
+        );
+      },
+    );
 
-      expect(session.status, SessionStatus.confirmed);
-      expect(
-        s.notifications().any(
-          (n) => n.type == NotificationType.sessionConfirmed,
-        ),
-        true,
+    test('a coach proposes a meeting time, not the high tide itself', () async {
+      final s = AppState(
+        MockClubRepository(),
+        memberDirectory: FakeMemberDirectory(),
       );
-    });
-
-    test('a coach proposes a meeting time, not the high tide itself', () {
-      final s = AppState(MockClubRepository());
-      s.login('coach@athlunkard.club', demoPassword);
+      await s.login('coach@athlunkard.club', fakePassword);
 
       final day = s.upcomingDays().firstWhere(
         (d) =>
@@ -64,9 +66,12 @@ void main() {
       expect(session.highTideTime, window.localTime);
     });
 
-    test('tells athletes when to meet, not when the tide is high', () {
-      final s = AppState(MockClubRepository());
-      s.login('coach@athlunkard.club', demoPassword);
+    test('tells athletes when to meet, not when the tide is high', () async {
+      final s = AppState(
+        MockClubRepository(),
+        memberDirectory: FakeMemberDirectory(),
+      );
+      await s.login('coach@athlunkard.club', fakePassword);
 
       final day = s.upcomingDays().firstWhere(
         (d) =>
@@ -78,16 +83,19 @@ void main() {
 
       s.sendProposal(day, window, meetingTime: meetAt);
 
-      s.logout();
-      s.login('saoirse@athlunkard.club', demoPassword);
+      await s.logout();
+      await s.login('saoirse@athlunkard.club', fakePassword);
       final invitation = s.notifications().first.body;
       expect(invitation, contains('06:00'));
       expect(invitation, isNot(contains('06:41')));
     });
 
-    test("a day's two high tides become two independent sessions", () {
-      final s = AppState(MockClubRepository());
-      s.login('coach@athlunkard.club', demoPassword);
+    test("a day's two high tides become two independent sessions", () async {
+      final s = AppState(
+        MockClubRepository(),
+        memberDirectory: FakeMemberDirectory(),
+      );
+      await s.login('coach@athlunkard.club', fakePassword);
 
       final day = s.upcomingDays().firstWhere(
         (d) =>
@@ -106,17 +114,20 @@ void main() {
         evening.localTime,
       ]);
 
-      s.logout();
-      s.login('saoirse@athlunkard.club', demoPassword);
+      await s.logout();
+      await s.login('saoirse@athlunkard.club', fakePassword);
       s.respondToProposal(sessions.first, accept: true);
 
       expect(sessions.first.committedCount, 1);
       expect(sessions.last.committedCount, 0);
     });
 
-    test('a coach pivoting a session marks it as land training', () {
-      final s = AppState(MockClubRepository());
-      s.login('coach@athlunkard.club', demoPassword);
+    test('a coach pivoting a session marks it as land training', () async {
+      final s = AppState(
+        MockClubRepository(),
+        memberDirectory: FakeMemberDirectory(),
+      );
+      await s.login('coach@athlunkard.club', fakePassword);
 
       final session = s.sessionById('s_day5')!; // confirmed
       s.cancelSession(session, pivotToLand: true);
@@ -125,9 +136,12 @@ void main() {
       expect(session.isCancelled, true);
     });
 
-    test('a parent only sees sessions their child is in', () {
-      final s = AppState(MockClubRepository());
-      s.login('parent@athlunkard.club', demoPassword);
+    test('a parent only sees sessions their child is in', () async {
+      final s = AppState(
+        MockClubRepository(),
+        memberDirectory: FakeMemberDirectory(),
+      );
+      await s.login('parent@athlunkard.club', fakePassword);
 
       // Seed data has Cian (the child) committed to s_day5.
       final visible = s.sessionsForCurrentUser();

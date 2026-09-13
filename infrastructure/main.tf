@@ -35,12 +35,22 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+
+  # identitytoolkit refuses application default credentials without a quota
+  # project, and bills the call to Google's own project number instead of ours.
+  # These two send our project as the quota consumer, which is what makes
+  # google_identity_platform_config work at all under ADC.
+  user_project_override = true
+  billing_project       = var.project_id
 }
 
 # Firebase resources (project/app registration) live in the google-beta provider.
 provider "google-beta" {
   project = var.project_id
   region  = var.region
+
+  user_project_override = true
+  billing_project       = var.project_id
 }
 
 # APIs the project needs so far. Enabling is idempotent and free; the resources
@@ -58,6 +68,9 @@ locals {
     "eventarc.googleapis.com",
     "firebase.googleapis.com",
     "firebaserules.googleapis.com",
+    # Firebase Auth. Sessions are the first thing the *app* writes, and a
+    # Firestore rule can only authorise a write against an identity.
+    "identitytoolkit.googleapis.com",
   ]
 }
 
