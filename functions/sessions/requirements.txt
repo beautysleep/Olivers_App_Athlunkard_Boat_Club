@@ -1,0 +1,8 @@
+# Verifies the caller's Firebase ID token, reads/writes Firestore, and sends
+# FCM pushes. No stdlib equivalent. Official Google package (Apache-2.0).
+firebase-admin>=6.5,<8
+# IANA tz database so ZoneInfo works in minimal containers without system
+# zoneinfo (e.g. Cloud Functions).
+tzdata>=2024.1
+# Note: functions-framework is NOT pinned here — the Cloud Functions Python
+# runtime provides it. Install it in a local venv only for local testing.

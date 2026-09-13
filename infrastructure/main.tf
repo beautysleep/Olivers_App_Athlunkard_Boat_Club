@@ -71,6 +71,9 @@ locals {
     # Firebase Auth. Sessions are the first thing the *app* writes, and a
     # Firestore rule can only authorise a write against an identity.
     "identitytoolkit.googleapis.com",
+    # Firebase Cloud Messaging — the sessions function sends a push when a
+    # coach proposes a session.
+    "fcm.googleapis.com",
   ]
 }
 
