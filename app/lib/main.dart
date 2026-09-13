@@ -5,6 +5,7 @@ import 'features/authentication/login_screen.dart';
 import 'features/home/role_home.dart';
 import 'services/app_scope.dart';
 import 'services/app_state.dart';
+import 'services/firestore_session_repository.dart';
 import 'services/firestore_tide_repository.dart';
 import 'services/firestore_day_rating_repository.dart';
 import 'services/firestore_water_release_repository.dart';
@@ -38,6 +39,7 @@ class _AthlunkardBoatClubAppState extends State<AthlunkardBoatClubApp> {
         weatherRepository: FirestoreWeatherRepository(),
         waterReleaseRepository: FirestoreWaterReleaseRepository(),
         dayRatingRepository: FirestoreDayRatingRepository(),
+        sessionRepository: const FirestoreSessionRepository(),
         memberDirectory: FirebaseMemberDirectory(
           membershipEndpoint: Uri.parse(membershipEndpoint),
         ),

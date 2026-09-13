@@ -9,6 +9,22 @@ library;
 import '../models/session.dart';
 import '../models/user_profile.dart';
 
+/// The sessions functions' URLs, from `terraform output
+/// propose_session_uri` etc. Passed in at build time rather than committed,
+/// the same way [membershipEndpoint] is:
+///
+///     flutter run --dart-define=PROPOSE_SESSION_ENDPOINT=https://...
+const proposeSessionEndpoint = String.fromEnvironment(
+  'PROPOSE_SESSION_ENDPOINT',
+);
+const respondToSessionEndpoint = String.fromEnvironment(
+  'RESPOND_TO_SESSION_ENDPOINT',
+);
+const cancelSessionEndpoint = String.fromEnvironment('CANCEL_SESSION_ENDPOINT');
+const registerDeviceTokenEndpoint = String.fromEnvironment(
+  'REGISTER_DEVICE_TOKEN_ENDPOINT',
+);
+
 abstract class SessionRepository {
   /// Every session the caller can see. [findAccount] resolves a stored id
   /// back to the [UserProfile] it names — sessions are only loaded once the
