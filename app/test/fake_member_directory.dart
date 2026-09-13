@@ -1,10 +1,11 @@
 import 'package:athlunkard_boat_club/models/user_profile.dart';
 import 'package:athlunkard_boat_club/services/member_directory.dart';
 
-/// Ids match MockClubRepository's seeded people, so a signed-in member lines up
-/// with the crews already committed to the seeded sessions. Sessions are still
-/// mock on this branch; they move to Firestore next, and these become real uids
-/// then.
+/// Ids match the profiles FakeSessionRepository-backed tests build their
+/// seeded sessions from, so a signed-in member lines up with a crew already
+/// committed. Sessions themselves are no longer here — they live behind
+/// SessionRepository — but the same id scheme is kept so both fakes agree on
+/// who's who.
 const coachProfile = UserProfile(
   id: 'u_coach',
   displayName: 'Niamh Ryan',
@@ -17,6 +18,24 @@ const saoirseProfile = UserProfile(
   email: 'saoirse@athlunkard.club',
   role: UserRole.athlete,
 );
+const aoifeProfile = UserProfile(
+  id: 'u_aoife',
+  displayName: 'Aoife Byrne',
+  email: 'aoife@athlunkard.club',
+  role: UserRole.athlete,
+);
+const cianProfile = UserProfile(
+  id: 'u_cian',
+  displayName: "Cian O'Brien",
+  email: 'cian@athlunkard.club',
+  role: UserRole.athlete,
+);
+const darraghProfile = UserProfile(
+  id: 'u_darragh',
+  displayName: 'Darragh Kelly',
+  email: 'darragh@athlunkard.club',
+  role: UserRole.athlete,
+);
 const parentProfile = UserProfile(
   id: 'u_parent',
   displayName: "Liam O'Brien",
@@ -25,7 +44,14 @@ const parentProfile = UserProfile(
   childId: 'u_cian',
 );
 
-const _knownMembers = [coachProfile, saoirseProfile, parentProfile];
+const _knownMembers = [
+  coachProfile,
+  saoirseProfile,
+  aoifeProfile,
+  cianProfile,
+  darraghProfile,
+  parentProfile,
+];
 const fakePassword = 'rowing';
 
 class FakeMemberDirectory implements MemberDirectory {

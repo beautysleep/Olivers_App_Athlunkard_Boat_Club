@@ -13,6 +13,7 @@ import 'firestore_weather_repository.dart';
 import 'day_ratings.dart';
 import 'member_directory.dart';
 import 'daylight_conditions.dart';
+import 'session_repository.dart';
 import 'session_windows.dart';
 import 'tide_windows.dart';
 import 'water_release_conditions.dart';
@@ -25,13 +26,17 @@ class AppState extends ChangeNotifier {
     FirestoreWeatherRepository? weatherRepository,
     FirestoreWaterReleaseRepository? waterReleaseRepository,
     FirestoreDayRatingRepository? dayRatingRepository,
+    SessionRepository? sessionRepository,
     this.memberDirectory,
   }) : _liveDayRatingSource = dayRatingRepository,
        _liveTideSource = tideRepository,
        _liveWeatherSource = weatherRepository,
-       _liveWaterReleaseSource = waterReleaseRepository;
+       _liveWaterReleaseSource = waterReleaseRepository,
+       _sessionSource = sessionRepository;
 
   final ClubRepository _repository;
+  final SessionRepository? _sessionSource;
+  List<Session> _sessions = const [];
 
   final FirestoreTideRepository? _liveTideSource;
   Map<String, List<LiveHighTide>> _liveHighTides = {};
@@ -82,6 +87,7 @@ class AppState extends ChangeNotifier {
     if (outcome != SignInOutcome.succeeded) return outcome;
     _currentUser = await _directory.currentMember();
     await loadRoster();
+    await loadSessions();
     notifyListeners();
     return outcome;
   }
@@ -90,7 +96,10 @@ class AppState extends ChangeNotifier {
   /// is before showing a login screen they do not need.
   Future<void> restoreSession() async {
     _currentUser = await _directory.currentMember();
-    if (_currentUser != null) await loadRoster();
+    if (_currentUser != null) {
+      await loadRoster();
+      await loadSessions();
+    }
     notifyListeners();
   }
 
@@ -116,8 +125,35 @@ class AppState extends ChangeNotifier {
 
   List<DayConditions> upcomingDays() => _repository.upcomingDays();
   Set<DateTime> coachUnavailableDays() => _repository.coachUnavailableDays();
-  List<Session> sessionsForDate(DateTime date) =>
-      _repository.sessionsForDate(date);
+
+  /// Sessions need the roster already loaded (to resolve
+  /// `committed_athlete_ids`) and, against the real backend, an authenticated
+  /// caller — so this runs from [_adopt]/[restoreSession], not unconditionally
+  /// at startup the way the read-only live sources below do.
+  Future<void> loadSessions() async {
+    final repository = _sessionSource;
+    if (repository == null) return;
+    await _loadOptionalSource(() async {
+      _sessions = await repository.loadSessions(_findAccount);
+    });
+  }
+
+  UserProfile? _findAccount(String id) {
+    for (final member in _roster) {
+      if (member.id == id) return member;
+    }
+    return null;
+  }
+
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  List<Session> sessionsForDate(DateTime date) {
+    final target = _dateOnly(date);
+    return [
+      for (final session in _sessions)
+        if (_dateOnly(session.meetingTime) == target) session,
+    ];
+  }
 
   /// Every live source is optional: without it the day card says "No data",
   /// which must not become the whole app failing to start.
@@ -207,7 +243,7 @@ class AppState extends ChangeNotifier {
       '${d.day.toString().padLeft(2, '0')}';
 
   Session? sessionById(String id) {
-    for (final s in _repository.sessions()) {
+    for (final s in _sessions) {
       if (s.id == id) return s;
     }
     return null;
@@ -219,7 +255,7 @@ class AppState extends ChangeNotifier {
   List<Session> sessionsForCurrentUser() {
     final user = _currentUser;
     if (user == null) return const [];
-    final all = _repository.sessions().toList()
+    final all = _sessions.toList()
       ..sort((a, b) => a.meetingTime.compareTo(b.meetingTime));
     switch (user.role) {
       case UserRole.coach:
@@ -242,35 +278,43 @@ class AppState extends ChangeNotifier {
 
   int get notificationCount => notifications().length;
 
-  void sendProposal(
+  /// False on a role mismatch or a failed write — the caller decides how to
+  /// tell the coach, this just says whether it happened.
+  Future<bool> sendProposal(
     DayConditions day,
     LiveHighTide highTide, {
     required DateTime meetingTime,
-  }) {
+  }) async {
     final coach = _currentUser;
-    if (coach == null || coach.role != UserRole.coach) return;
+    final repository = _sessionSource;
+    if (coach == null || coach.role != UserRole.coach || repository == null) {
+      return false;
+    }
 
-    final session = Session(
-      id: _repository.nextId('s'),
-      meetingTime: meetingTime,
-      highTideTime: highTide.localTime,
-      conditionRating: day.conditionRating,
-      coach: coach,
-      committedAthletes: [],
-    );
-    _repository.upsertSession(session);
+    final String sessionId;
+    try {
+      sessionId = await repository.proposeSession(
+        meetingTime: meetingTime,
+        highTideTime: highTide.localTime,
+        conditionRating: day.conditionRating,
+      );
+    } catch (_) {
+      return false;
+    }
+    await loadSessions();
 
     for (final athlete in _allAthletes) {
       _notify(
         athlete.id,
         NotificationType.proposalReceived,
         'New session proposed',
-        'A session is proposed for ${formatDayTime(session.meetingTime)} — '
+        'A session is proposed for ${formatDayTime(meetingTime)} — '
             'can you attend?',
-        sessionId: session.id,
+        sessionId: sessionId,
       );
     }
     notifyListeners();
+    return true;
   }
 
   /// Coach marks themselves unavailable for [day], so it won't be proposed.
@@ -282,12 +326,20 @@ class AppState extends ChangeNotifier {
 
   /// Coach cancels a session — either pivoting to land training or outright.
   /// Everyone who committed is notified.
-  void cancelSession(Session session, {required bool pivotToLand}) {
-    if (_currentUser?.role != UserRole.coach) return;
-    session.lifecycle = pivotToLand
-        ? SessionLifecycle.cancelledWeatherPivot
-        : SessionLifecycle.cancelledOutright;
-    _repository.upsertSession(session);
+  Future<bool> cancelSession(
+    Session session, {
+    required bool pivotToLand,
+  }) async {
+    final repository = _sessionSource;
+    if (_currentUser?.role != UserRole.coach || repository == null) {
+      return false;
+    }
+    try {
+      await repository.cancelSession(session.id, pivotToLand: pivotToLand);
+    } catch (_) {
+      return false;
+    }
+    await loadSessions();
 
     final when = formatDayTime(session.meetingTime);
     for (final athlete in session.committedAthletes) {
@@ -311,23 +363,33 @@ class AppState extends ChangeNotifier {
       }
     }
     notifyListeners();
+    return true;
   }
 
   // --- Athlete actions -----------------------------------------------------
   /// Athlete accepts or declines a proposed session.
-  void respondToProposal(Session session, {required bool accept}) {
+  Future<bool> respondToProposal(
+    Session session, {
+    required bool accept,
+  }) async {
     final athlete = _currentUser;
-    if (athlete == null || athlete.role != UserRole.athlete) return;
+    final repository = _sessionSource;
+    if (athlete == null ||
+        athlete.role != UserRole.athlete ||
+        repository == null) {
+      return false;
+    }
 
     final wasConfirmed = session.status == SessionStatus.confirmed;
     final alreadyIn = session.isCommitted(athlete);
 
-    if (accept && !alreadyIn) {
-      session.committedAthletes.add(athlete);
-    } else if (!accept && alreadyIn) {
-      session.committedAthletes.removeWhere((a) => a.id == athlete.id);
+    try {
+      await repository.respondToSession(session.id, accept: accept);
+    } catch (_) {
+      return false;
     }
-    _repository.upsertSession(session);
+    await loadSessions();
+    final updated = sessionById(session.id);
 
     // Notify the athlete's parent, if one is subscribed to them.
     if (accept && !alreadyIn) {
@@ -346,15 +408,15 @@ class AppState extends ChangeNotifier {
     }
 
     // If this response tipped it over the threshold, tell everyone going.
-    final nowConfirmed = session.status == SessionStatus.confirmed;
-    if (!wasConfirmed && nowConfirmed) {
-      for (final a in session.committedAthletes) {
+    final nowConfirmed = updated?.status == SessionStatus.confirmed;
+    if (!wasConfirmed && nowConfirmed == true && updated != null) {
+      for (final a in updated.committedAthletes) {
         _notify(
           a.id,
           NotificationType.sessionConfirmed,
           'Session confirmed',
           'The ${formatDayTime(session.meetingTime)} session is on — '
-              '${session.committedCount} going.',
+              '${updated.committedCount} going.',
           sessionId: session.id,
         );
       }
@@ -362,12 +424,13 @@ class AppState extends ChangeNotifier {
         session.coach.id,
         NotificationType.sessionConfirmed,
         'Session confirmed',
-        '${session.committedCount} athletes are going to the '
+        '${updated.committedCount} athletes are going to the '
             '${formatDayTime(session.meetingTime)} session.',
         sessionId: session.id,
       );
     }
     notifyListeners();
+    return true;
   }
 
   // --- Helpers -------------------------------------------------------------
