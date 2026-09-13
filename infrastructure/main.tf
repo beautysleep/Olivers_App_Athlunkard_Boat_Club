@@ -71,10 +71,8 @@ locals {
     # Firebase Auth. Sessions are the first thing the *app* writes, and a
     # Firestore rule can only authorise a write against an identity.
     "identitytoolkit.googleapis.com",
-    # Firebase Cloud Messaging — the back end for session push notifications
-    # (add-session-push-notifications). Already enabled in the project; recorded
-    # here so Terraform keeps managing it instead of trying to drop it from
-    # state on each plan.
+    # Firebase Cloud Messaging — the sessions function sends a push when a
+    # coach proposes a session.
     "fcm.googleapis.com",
   ]
 }
