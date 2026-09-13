@@ -1,22 +1,17 @@
 /// The seam that makes "mock now, real later" work: the demo ships
 /// [MockClubRepository], and a Firestore implementation can replace it without
-/// the UI changing.
+/// the UI changing. Sessions have their own seam — [SessionRepository] — now
+/// that they are the first of these four concerns to become real.
 library;
 
 import '../models/app_notification.dart';
 import '../models/day_conditions.dart';
-import '../models/session.dart';
 
 abstract class ClubRepository {
   List<DayConditions> upcomingDays();
 
   Set<DateTime> coachUnavailableDays();
   void markCoachUnavailable(DateTime date);
-
-  List<Session> sessions();
-  List<Session> sessionsForDate(DateTime date);
-
-  void upsertSession(Session session);
 
   List<AppNotification> notificationsForUser(String userId);
   void addNotification(AppNotification notification);

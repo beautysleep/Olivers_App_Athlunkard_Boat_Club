@@ -104,9 +104,18 @@ class SessionDetailScreen extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: going
                     ? null
-                    : () {
-                        appState.respondToProposal(session, accept: true);
-                        _snack(context, "You're in — see you on the water.");
+                    : () async {
+                        final ok = await appState.respondToProposal(
+                          session,
+                          accept: true,
+                        );
+                        if (!context.mounted) return;
+                        _snack(
+                          context,
+                          ok
+                              ? "You're in — see you on the water."
+                              : 'Could not send your response — try again.',
+                        );
                       },
                 icon: const Icon(Icons.check),
                 label: const Text('Accept'),
@@ -116,9 +125,18 @@ class SessionDetailScreen extends StatelessWidget {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: going
-                    ? () {
-                        appState.respondToProposal(session, accept: false);
-                        _snack(context, 'You have declined this session.');
+                    ? () async {
+                        final ok = await appState.respondToProposal(
+                          session,
+                          accept: false,
+                        );
+                        if (!context.mounted) return;
+                        _snack(
+                          context,
+                          ok
+                              ? 'You have declined this session.'
+                              : 'Could not send your response — try again.',
+                        );
                       }
                     : null,
                 icon: const Icon(Icons.close),
@@ -199,12 +217,15 @@ class SessionDetailScreen extends StatelessWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      appState.cancelSession(session, pivotToLand: pivot);
+      final ok = await appState.cancelSession(session, pivotToLand: pivot);
+      if (!context.mounted) return;
       _snack(
         context,
-        pivot
-            ? 'Moved to land — athletes notified.'
-            : 'Cancelled — athletes notified.',
+        ok
+            ? (pivot
+                  ? 'Moved to land — athletes notified.'
+                  : 'Cancelled — athletes notified.')
+            : 'Could not cancel — try again.',
       );
     }
   }

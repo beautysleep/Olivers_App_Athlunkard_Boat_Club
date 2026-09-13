@@ -1,11 +1,14 @@
-/// In-memory [ClubRepository] with seed data, so the whole demo is explorable
-/// without a backend. Replace with a real implementation later — nothing in the
-/// UI depends on this class, only on [ClubRepository].
+/// In-memory [ClubRepository] with seed data for the day/coach-availability/
+/// notification concerns it still owns. Sessions moved out to
+/// [SessionRepository] — this class alone is no longer a complete offline
+/// demo; a real run needs a session source too. Replace with a real
+/// implementation later — nothing in the UI depends on this class, only on
+/// [ClubRepository].
 library;
 
 import '../models/app_notification.dart';
 import '../models/day_conditions.dart';
-import '../models/session.dart';
+import '../models/session.dart' show Conditions;
 import '../models/user_profile.dart';
 import 'club_repository.dart';
 
@@ -73,7 +76,6 @@ class MockClubRepository implements ClubRepository {
   late DateTime _today;
   final List<DayConditions> _days = [];
   final Set<DateTime> _unavailable = {};
-  final List<Session> _sessions = [];
   final List<AppNotification> _notifications = [];
   int _idCounter = 1000;
 
@@ -147,45 +149,12 @@ class MockClubRepository implements ClubRepository {
     // Coach has marked themselves unavailable on day 8 (away), despite green.
     _unavailable.add(_dateOnly(_at(8, 0, 0)));
 
-    // A session mid-flight on day 2: 3 committed, needs 1 more.
-    _sessions.add(
-      Session(
-        id: 's_day2',
-        meetingTime: tide(2),
-        highTideTime: tide(2),
-        conditionRating: Conditions.amber,
-        coach: _coach,
-        committedAthletes: [_aoife, _cian, _darragh],
-      ),
-    );
-
-    // A confirmed session on day 5: 5 committed (>= minimum of 4).
-    _sessions.add(
-      Session(
-        id: 's_day5',
-        meetingTime: tide(5),
-        highTideTime: tide(5),
-        conditionRating: Conditions.green,
-        coach: _coach,
-        committedAthletes: [_aoife, _meabh, _conor, _cian, _darragh],
-      ),
-    );
-
-    // A session proposed for day 1 that the coach pivoted to land as the
-    // forecast turned red.
-    _sessions.add(
-      Session(
-        id: 's_pivot',
-        meetingTime: tide(1),
-        highTideTime: tide(1),
-        conditionRating: Conditions.amber,
-        coach: _coach,
-        committedAthletes: [_aoife, _cian],
-        lifecycle: SessionLifecycle.cancelledWeatherPivot,
-      ),
-    );
-
-    // Seed notifications so each inbox isn't empty on first login.
+    // Seed notifications so each inbox isn't empty on first login. The
+    // sessions these name (s_day2/s_day5/s_pivot) are no longer seeded here —
+    // sessions live in a real SessionRepository now — but a notification only
+    // ever carries a session *id*, so an inbox entry pointing at a session
+    // that may not exist in a given run is the same "tap through and see"
+    // affordance the real backend will eventually give these too.
     _notifications.addAll([
       AppNotification(
         id: 'n_1',
@@ -235,28 +204,6 @@ class MockClubRepository implements ClubRepository {
 
   @override
   void markCoachUnavailable(DateTime date) => _unavailable.add(_dateOnly(date));
-
-  @override
-  List<Session> sessions() => List.unmodifiable(_sessions);
-
-  @override
-  List<Session> sessionsForDate(DateTime date) {
-    final target = _dateOnly(date);
-    return [
-      for (final s in _sessions)
-        if (_dateOnly(s.meetingTime) == target) s,
-    ];
-  }
-
-  @override
-  void upsertSession(Session session) {
-    final i = _sessions.indexWhere((s) => s.id == session.id);
-    if (i >= 0) {
-      _sessions[i] = session;
-    } else {
-      _sessions.add(session);
-    }
-  }
 
   @override
   List<AppNotification> notificationsForUser(String userId) {
