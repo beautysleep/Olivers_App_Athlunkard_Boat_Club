@@ -511,7 +511,7 @@ class _DayCardState extends State<DayCard> {
       ];
     }
     return [
-      for (var i = 0; i < windows.length; i++)
+      for (var i = 0; i < windows.length; i++) ...[
         _metric(
           Icons.waves,
           windows.length > 1 ? 'High tide ${i + 1}' : 'High tide',
@@ -519,7 +519,33 @@ class _DayCardState extends State<DayCard> {
           '${windows[i].highTide.heightMetres.toStringAsFixed(1)}m',
           status: MetricStatus.live,
         ),
+        _usableWindowRow(windows[i].highTide.localTime),
+      ],
     ];
+  }
+
+  /// [verdict] null covers both "the engine hasn't rated this day" and "no
+  /// window entry matches this tide" — either way nothing was computed, so
+  /// both get the same "No data" treatment as every other metric row. A
+  /// ruled-out tide is different: the engine *did* compute an answer, it's
+  /// just negative, so it says so rather than claiming no data exists.
+  Widget _usableWindowRow(DateTime highTideTime) {
+    final verdict = widget.liveDayRating?.forHighTide(highTideTime);
+    if (verdict == null) return _missing(Icons.schedule, 'Usable window');
+    if (!verdict.isRowable) {
+      return _metric(
+        Icons.schedule,
+        'Usable window',
+        'not rowable',
+        status: MetricStatus.danger,
+      );
+    }
+    return _metric(
+      Icons.schedule,
+      'Usable window',
+      '${formatTime(verdict.start!)}–${formatTime(verdict.end!)}',
+      status: MetricStatus.live,
+    );
   }
 
   Widget _windRow() {
