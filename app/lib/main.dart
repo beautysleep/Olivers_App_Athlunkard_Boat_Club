@@ -13,6 +13,8 @@ import 'services/firestore_weather_repository.dart';
 import 'services/firebase_member_directory.dart';
 import 'services/member_directory.dart';
 import 'services/mock_club_repository.dart';
+import 'services/push_registration.dart';
+import 'services/session_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +42,9 @@ class _AthlunkardBoatClubAppState extends State<AthlunkardBoatClubApp> {
         waterReleaseRepository: FirestoreWaterReleaseRepository(),
         dayRatingRepository: FirestoreDayRatingRepository(),
         sessionRepository: const FirestoreSessionRepository(),
+        pushRegistration: PushRegistration(
+          endpoint: Uri.parse(registerDeviceTokenEndpoint),
+        ),
         memberDirectory: FirebaseMemberDirectory(
           membershipEndpoint: Uri.parse(membershipEndpoint),
         ),

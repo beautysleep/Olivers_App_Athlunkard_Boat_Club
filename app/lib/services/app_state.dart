@@ -13,6 +13,7 @@ import 'firestore_weather_repository.dart';
 import 'day_ratings.dart';
 import 'member_directory.dart';
 import 'daylight_conditions.dart';
+import 'push_registration.dart';
 import 'session_repository.dart';
 import 'session_windows.dart';
 import 'tide_windows.dart';
@@ -27,6 +28,7 @@ class AppState extends ChangeNotifier {
     FirestoreWaterReleaseRepository? waterReleaseRepository,
     FirestoreDayRatingRepository? dayRatingRepository,
     SessionRepository? sessionRepository,
+    this.pushRegistration,
     this.memberDirectory,
   }) : _liveDayRatingSource = dayRatingRepository,
        _liveTideSource = tideRepository,
@@ -37,6 +39,8 @@ class AppState extends ChangeNotifier {
   final ClubRepository _repository;
   final SessionRepository? _sessionSource;
   List<Session> _sessions = const [];
+
+  final PushRegistration? pushRegistration;
 
   final FirestoreTideRepository? _liveTideSource;
   Map<String, List<LiveHighTide>> _liveHighTides = {};
@@ -86,8 +90,7 @@ class AppState extends ChangeNotifier {
     final outcome = await attempt();
     if (outcome != SignInOutcome.succeeded) return outcome;
     _currentUser = await _directory.currentMember();
-    await loadRoster();
-    await loadSessions();
+    await _afterSignedIn();
     notifyListeners();
     return outcome;
   }
@@ -96,11 +99,30 @@ class AppState extends ChangeNotifier {
   /// is before showing a login screen they do not need.
   Future<void> restoreSession() async {
     _currentUser = await _directory.currentMember();
-    if (_currentUser != null) {
-      await loadRoster();
-      await loadSessions();
-    }
+    if (_currentUser != null) await _afterSignedIn();
     notifyListeners();
+  }
+
+  /// Everything that needs a signed-in identity: the roster (sessions need it
+  /// to resolve ids), sessions themselves, and push registration — run on
+  /// every sign-in, and again on every relaunch of an already-signed-in
+  /// session, since a token can rotate while the app is closed.
+  Future<void> _afterSignedIn() async {
+    await loadRoster();
+    await loadSessions();
+    await registerForPush();
+  }
+
+  /// A denied permission or missing device support must not break login —
+  /// the same failure-tolerant posture as the read-only live sources below.
+  Future<void> registerForPush() async {
+    final registration = pushRegistration;
+    if (registration == null) return;
+    try {
+      await registration.registerCurrentDevice();
+    } catch (_) {
+      return;
+    }
   }
 
   Future<void> loadRoster() async {
