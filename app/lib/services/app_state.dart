@@ -145,28 +145,14 @@ class AppState extends ChangeNotifier {
   /// than inventing a window.
   LiveDaylight? liveDaylightFor(DateTime date) => _liveDaylight[_dateKey(date)];
 
-  /// Offering no window is deliberate when either input is missing: judging
-  /// real tides against mock daylight would produce a confident wrong answer.
-  DaySessions daySessionsFor(DayConditions day) {
-    final sessionsThatDay = sessionsForDate(day.date);
-    final highs = liveHighTidesFor(day.date);
-    final daylight = liveDaylightFor(day.date);
-    if (highs.isEmpty || daylight == null) {
-      return (offerableWindows: null, sessionsWithoutAWindow: sessionsThatDay);
-    }
-    final offerable = offerableHighTides(
-      highs,
-      localSunrise: daylight.localSunrise,
-      localSunset: daylight.localSunset,
-    );
-    return (
-      offerableWindows: sessionsByHighTide(offerable, sessionsThatDay),
-      sessionsWithoutAWindow: sessionsWithoutAHighTide(
-        offerable,
-        sessionsThatDay,
-      ),
-    );
-  }
+  /// Offering no window is deliberate when the engine's verdict is missing:
+  /// a local fallback would reintroduce the 4.2m proxy that time-at-depth
+  /// replaced, so the card says "No data" until the engine's verdict arrives.
+  DaySessions daySessionsFor(DayConditions day) => daySessionsFromRating(
+    highs: liveHighTidesFor(day.date),
+    rating: liveDayRatingFor(day.date),
+    sessionsThatDay: sessionsForDate(day.date),
+  );
 
   Future<void> loadLiveWeather() async {
     final repository = _liveWeatherSource;

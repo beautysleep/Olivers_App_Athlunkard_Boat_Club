@@ -46,4 +46,15 @@ def test_the_longer_of_two_calm_runs_wins():
 def test_a_run_shorter_than_the_minimum_is_no_window_at_all():
     series = slots(GUSTY, CALM, GUSTY)
 
-    assert longest_calm_interval(series, max_wind_kmh=30, max_rain_mm=5) is None
+    # Pin the minimum here rather than relying on the default so this test
+    # stays about the rule, not about whichever session length the club has
+    # settled on this week.
+    assert (
+        longest_calm_interval(
+            series,
+            max_wind_kmh=30,
+            max_rain_mm=5,
+            minimum_length=timedelta(hours=2),
+        )
+        is None
+    )

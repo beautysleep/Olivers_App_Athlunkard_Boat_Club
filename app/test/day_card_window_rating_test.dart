@@ -30,8 +30,9 @@ final _day = DayConditions(
   localSunset: DateTime(2026, 8, 26, 21, 45),
 );
 
-/// The morning tide is unrowable, the evening one is fine — the case a single
-/// day-level colour used to hide.
+/// The morning tide is unrowable (weather ruled it out) but the depth window
+/// still stood; the evening one has weather narrower than the depth, so the
+/// card can show them separately.
 final _rating = LiveDayRating(
   conditions: Conditions.green,
   reasons: const [],
@@ -39,13 +40,17 @@ final _rating = LiveDayRating(
     LiveWindowRating(
       highTideTime: _morning.localTime,
       conditions: Conditions.red,
-      reasons: const ['No unbroken 1.5h stretch stays under the limits.'],
+      tideStart: DateTime(2026, 8, 26, 5, 30),
+      tideEnd: DateTime(2026, 8, 26, 8, 0),
+      reasons: const ['No unbroken 1h stretch stays under the limits.'],
     ),
     LiveWindowRating(
       highTideTime: _evening.localTime,
       conditions: Conditions.green,
       start: DateTime(2026, 8, 26, 16, 36),
       end: DateTime(2026, 8, 26, 20, 36),
+      tideStart: DateTime(2026, 8, 26, 16, 0),
+      tideEnd: DateTime(2026, 8, 26, 21, 0),
       reasons: const [],
     ),
   ],
@@ -86,28 +91,86 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('06:41'), findsWidgets);
-    expect(find.textContaining('No unbroken 1.5h stretch'), findsOneWidget);
+    expect(find.textContaining('No unbroken 1h stretch'), findsOneWidget);
   });
 
-  testWidgets('a rowable tide shows the window the engine computed for it', (
+  testWidgets('the card shows every tide window the engine kept', (
     tester,
   ) async {
     await tester.pumpWidget(_card());
     await tester.tap(find.byType(DayCard));
     await tester.pumpAndSettle();
 
-    expect(find.text('Usable window'), findsNWidgets(2));
-    expect(find.textContaining('16:36–20:36'), findsOneWidget);
+    expect(find.text('Tide window'), findsNWidgets(2));
+    expect(find.textContaining('05:30–08:00'), findsOneWidget);
+    expect(find.textContaining('16:00–21:00'), findsOneWidget);
   });
 
   testWidgets(
-    'a ruled-out tide says so rather than claiming no data was computed',
+    'the narrower weather window is called out alongside the wider tide window',
     (tester) async {
       await tester.pumpWidget(_card());
       await tester.tap(find.byType(DayCard));
       await tester.pumpAndSettle();
 
-      expect(find.text('not rowable'), findsOneWidget);
+      // Evening: tide holds 16:00–21:00 but calm only runs 16:36–20:36 — the
+      // card lists both so the coach sees the shortfall rather than a single
+      // flattened window.
+      expect(find.text('Best weather'), findsOneWidget);
+      expect(find.textContaining('16:36–20:36'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'a weather window identical to the tide window is not restated',
+    (tester) async {
+      final sameAsTide = LiveDayRating(
+        conditions: Conditions.green,
+        reasons: const [],
+        windows: [
+          LiveWindowRating(
+            highTideTime: _evening.localTime,
+            conditions: Conditions.green,
+            start: DateTime(2026, 8, 26, 16, 0),
+            end: DateTime(2026, 8, 26, 21, 0),
+            tideStart: DateTime(2026, 8, 26, 16, 0),
+            tideEnd: DateTime(2026, 8, 26, 21, 0),
+            reasons: const [],
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: DayCard(
+              day: _day,
+              unavailable: false,
+              role: UserRole.coach,
+              offerableSessions: sessionsByHighTide([_evening], const []),
+              liveDayRating: sameAsTide,
+              onSendProposal: (_, _) {},
+              onMarkUnavailable: () {},
+              onOpenSession: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byType(DayCard));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tide window'), findsOneWidget);
+      expect(find.text('Best weather'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'a ruled-out tide says so in the action area even though the depth window is shown',
+    (tester) async {
+      await tester.pumpWidget(_card());
+      await tester.tap(find.byType(DayCard));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('06:41 tide — not rowable'), findsOneWidget);
     },
   );
 }

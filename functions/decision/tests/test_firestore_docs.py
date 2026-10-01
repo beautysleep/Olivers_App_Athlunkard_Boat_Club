@@ -72,3 +72,37 @@ def test_a_day_level_reason_is_not_repeated_onto_every_window():
 
     assert document["reasons"] == ["Weir state unconfirmed."]
     assert document["windows"][0]["reasons"] == []
+
+
+def test_the_tide_window_is_written_alongside_the_weather_window():
+    # The weather window can be shorter than the tide window (wind drops the
+    # usable part), and on an override-red day the weather window is null while
+    # the tide window still stands — the card needs both to tell them apart.
+    tide_window = (
+        datetime(2026, 8, 26, 15, tzinfo=timezone.utc),
+        datetime(2026, 8, 26, 21, tzinfo=timezone.utc),
+    )
+    weather_window = (
+        datetime(2026, 8, 26, 17, tzinfo=timezone.utc),
+        datetime(2026, 8, 26, 20, tzinfo=timezone.utc),
+    )
+    rating = DayRating(
+        GREEN,
+        [],
+        [
+            WindowRating(
+                EVENING,
+                GREEN,
+                weather_window,
+                [],
+                tide_window=tide_window,
+            )
+        ],
+    )
+
+    document = build_rating_document("2026-08-26", rating, computed_at=COMPUTED_AT)
+
+    assert document["windows"][0]["tide_window_start"] == tide_window[0]
+    assert document["windows"][0]["tide_window_end"] == tide_window[1]
+    assert document["windows"][0]["window_start"] == weather_window[0]
+    assert document["windows"][0]["window_end"] == weather_window[1]

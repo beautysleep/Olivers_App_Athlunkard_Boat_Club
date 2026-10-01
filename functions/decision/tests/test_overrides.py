@@ -9,9 +9,9 @@ DISCHARGE_EXPECTED = "discharge_expected"
 NO_DISCHARGE_EXPECTED = "no_discharge_expected"
 UNPARSED = "unparsed"
 
-# A 5.0 m high tide between 1.0 m lows holds 4.2 m for roughly three and a half
-# hours, which is long enough for the 1.5h session rule to have something to
-# find.
+# A 5.0 m high tide between 1.0 m lows holds 3.7 m for roughly five hours, well
+# over the 1h session rule — enough breathing room for the overrides tests to
+# exercise override behaviour without the depth/length gate getting in the way.
 EXTREMES = [
     TideExtreme(at=HIGH_TIDE - timedelta(hours=6), height_metres=1.0),
     TideExtreme(at=HIGH_TIDE, height_metres=5.0),
@@ -50,8 +50,20 @@ def test_a_confirmed_discharge_forces_red_through_perfect_weather():
     verdict = rate(classification=DISCHARGE_EXPECTED)
 
     assert verdict.rating == RED
-    assert verdict.windows == []
     assert any("discharg" in reason.lower() for reason in verdict.reasons)
+
+
+def test_an_override_day_still_carries_the_tide_window_for_the_card_to_show():
+    # The water is still above 3.7 m for the same stretch regardless of the
+    # weir — the card shows that stretch so a coach sees what was lost, not
+    # just a bare "no rowing".
+    verdict = rate(classification=DISCHARGE_EXPECTED)
+
+    [entry] = verdict.windows
+    assert entry.rating == RED
+    assert entry.window is None
+    assert entry.tide_window is not None
+    assert entry.tide_window[0] < HIGH_TIDE < entry.tide_window[1]
 
 
 def test_wording_esb_has_never_used_is_never_read_as_clear():

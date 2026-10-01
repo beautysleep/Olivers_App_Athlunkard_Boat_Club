@@ -19,8 +19,10 @@ RED = "red"
 
 # The depth the club needs under them. How long a tide holds it is not a fixed
 # span: it falls out of the curve between the neighbouring lows, so a bigger
-# tide stays rowable for longer. Provisional, and the coaches' number.
-MINIMUM_ROWABLE_HEIGHT_METRES = 4.2
+# tide stays rowable for longer and a smaller one can still qualify as long as
+# the curve keeps 3.7 m for the session minimum. Provisional, and the coaches'
+# number.
+MINIMUM_ROWABLE_HEIGHT_METRES = 3.7
 
 
 @dataclass(frozen=True)
@@ -55,12 +57,19 @@ class DailyWeather:
 class WindowRating:
     """One of a day's rowable high tides, rated on its own. A day has two, each
     committable without the other, so a single verdict for the day would flatten
-    out the one the coach actually wants."""
+    out the one the coach actually wants.
+
+    [window] is the weather-calm stretch, which an override day or a windy day
+    may leave null; [tide_window] is the daylight-clipped stretch of 3.7 m
+    water that the tide curve gives, which the app shows regardless so a coach
+    still sees what the tide was offering when the verdict was red.
+    """
 
     high_tide_at: datetime
-    rating: str
+    rating: str | None
     window: tuple[datetime, datetime] | None
     reasons: list[str]
+    tide_window: tuple[datetime, datetime] | None = None
 
 
 @dataclass(frozen=True)

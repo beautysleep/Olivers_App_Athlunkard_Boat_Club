@@ -61,6 +61,19 @@ def test_no_forecast_at_all_is_not_a_rating():
     assert any("no forecast" in reason.lower() for reason in verdict.reasons)
 
 
+def test_no_forecast_still_carries_the_tide_window_so_the_card_can_show_it():
+    # Without weather there is no rating, but the tide curve is already settled
+    # — the card should still show when the water would be rowable, so planning
+    # the far-off day does not wait on the forecast catching up.
+    verdict = rate(None)
+
+    [entry] = verdict.windows
+    assert entry.rating is None
+    assert entry.window is None
+    assert entry.tide_window is not None
+    assert entry.tide_window[0] < HIGH_TIDE < entry.tide_window[1]
+
+
 def test_hourly_detail_is_preferred_over_the_daily_figure_where_it_reaches():
     from models import WeatherSlot
 

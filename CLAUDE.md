@@ -150,8 +150,38 @@ Detail in `Primary_Personas.md` and `Primary_User_Flows.md`.
 
 ## Commands
 
-_To be filled in once the project is scaffolded (e.g. how to run the app, run
-tests, deploy infrastructure). Add them here so every session knows them._
+### Flutter app (`app/`)
+
+```sh
+cd app
+flutter pub get                        # once per clone / after dependency bumps
+flutter test                           # the test suite
+flutter analyze                        # lint
+flutter run                            # on a plugged-in phone (USB debugging on)
+```
+
+> `flutter pub get` on a fresh machine may try to rewrite `analysis_options.yaml`
+> (adding an `analyzer: exclude:` block) and bump transitive versions in
+> `pubspec.lock`. Both are tool-induced churn; revert with
+> `git checkout -- app/analysis_options.yaml app/pubspec.lock` before committing
+> if they appear unrelated to the task.
+
+### Decision engine and other Cloud Functions (`functions/*/`)
+
+```sh
+cd functions/decision                  # same shape in tide/, weather/, water_release/, membership/
+python3 -m venv .venv                  # once; .venv is git-ignored
+.venv/bin/pip install -r requirements.txt pytest
+PYTHONPATH=. .venv/bin/python -m pytest -q      # offline suite
+
+# Live canary (reads real Firestore via Application Default Credentials)
+export RUN_LIVE_CANARY=1
+PYTHONPATH=. .venv/bin/python -m unittest discover -s tests -p "test_live_canary.py"
+```
+
+### Infrastructure (`infrastructure/`)
+
+Terraform-only; never click in the GCP console. Confirm plans before applying.
 
 ## Claude-specific behaviour
 

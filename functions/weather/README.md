@@ -12,7 +12,7 @@ by Call* plan; One Call 3.0 returns 401):
 | Endpoint | Use |
 | --- | --- |
 | `/timeline/1day` | Daily aggregate — ~10 days in one call. Tier-1 planning. |
-| `/timeline/1h` | Hourly, paginated forward to **48h**. Tier-2 confirmation / the ≥1.5h wind-window search. |
+| `/timeline/1h` | Hourly, paginated forward to **48h**. Tier-2 confirmation / the wind-window search (unbroken stretch ≥ `MINIMUM_SESSION_LENGTH`, currently 1h). |
 
 - Wind is stored in **m/s** (provider-native SI); the decision layer converts to
   km/h to apply the thresholds.

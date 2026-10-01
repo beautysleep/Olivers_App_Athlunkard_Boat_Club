@@ -19,7 +19,7 @@ from models import (
 )
 from tide_curve import TideExtreme, rowable_interval
 
-MINIMUM_SESSION_LENGTH = timedelta(hours=1, minutes=30)
+MINIMUM_SESSION_LENGTH = timedelta(hours=1)
 
 APPROXIMATED_FORECAST = (
     "Approximated from the whole-day forecast. This sharpens closer to the "
@@ -110,9 +110,12 @@ def rowable_windows_in_daylight(
     daylight: tuple[datetime, datetime] | None,
     *,
     minimum_height_metres: float = MINIMUM_ROWABLE_HEIGHT_METRES,
+    minimum_length: timedelta = MINIMUM_SESSION_LENGTH,
 ) -> list[tuple[datetime, tuple[datetime, datetime]]]:
     """Each rowable high tide paired with the stretch it holds a rowable depth
-    for, clipped to daylight."""
+    for, clipped to daylight. A tide whose daylight share is shorter than a
+    session is dropped: the gate is time at depth in daylight, not the height
+    the water happened to peak at."""
     windows = []
     for high_tide in sorted(high_tides):
         interval = rowable_interval(
@@ -122,23 +125,29 @@ def rowable_windows_in_daylight(
             continue
         if daylight is not None:
             interval = _overlap(interval, daylight)
-        if interval is not None:
-            windows.append((high_tide, interval))
+        if interval is None:
+            continue
+        if interval[1] - interval[0] < minimum_length:
+            continue
+        windows.append((high_tide, interval))
     return windows
 
 
 def _rate_one_window(
     high_tide: datetime,
-    interval: tuple[datetime, datetime],
+    tide_window: tuple[datetime, datetime],
     slots: list[WeatherSlot],
     daily: DailyWeather | None,
     thresholds: Thresholds,
     now: datetime | None = None,
 ) -> WindowRating:
+    interval = tide_window
     if now is not None:
         remaining = _overlap(interval, (now, interval[1]))
         if remaining is None:
-            return WindowRating(high_tide, RED, None, [ALREADY_PASSED])
+            return WindowRating(
+                high_tide, RED, None, [ALREADY_PASSED], tide_window=tide_window
+            )
         interval = remaining
 
     across, approximated = _slots_across(interval, slots, daily)
@@ -158,13 +167,15 @@ def _rate_one_window(
             rating=AMBER if big_boats_only else GREEN,
             window=calm,
             reasons=[*reasons, BIG_BOATS_ONLY] if big_boats_only else reasons,
+            tide_window=tide_window,
         )
 
     return WindowRating(
         high_tide_at=high_tide,
         rating=RED,
         window=None,
-        reasons=[*reasons, "No unbroken 1.5h stretch stays under the limits."],
+        reasons=[*reasons, "No unbroken 1h stretch stays under the limits."],
+        tide_window=tide_window,
     )
 
 
@@ -173,6 +184,24 @@ def _best(ratings: list[str]) -> str:
         if rating in ratings:
             return rating
     return RED
+
+
+def _settled_window(
+    high_tide: datetime,
+    tide_window: tuple[datetime, datetime],
+    rating: str | None,
+    reasons: list[str],
+) -> WindowRating:
+    """A tide the day's verdict settles without weather doing any work — the
+    depth window still stands, so the card can show it, but there is no calm
+    stretch to report inside it."""
+    return WindowRating(
+        high_tide_at=high_tide,
+        rating=rating,
+        window=None,
+        reasons=list(reasons),
+        tide_window=tide_window,
+    )
 
 
 def rate_day(
@@ -187,22 +216,30 @@ def rate_day(
     thresholds: Thresholds = Thresholds(),
     now: datetime | None = None,
 ) -> DayRating:
-    if water_release_classification == DISCHARGE_EXPECTED:
-        return DayRating(RED, ["ESB expects a discharge at Parteen Weir — no rowing."])
-
     windows = rowable_windows_in_daylight(high_tides, extremes, daylight)
+
+    if water_release_classification == DISCHARGE_EXPECTED:
+        reason = "ESB expects a discharge at Parteen Weir — no rowing."
+        return DayRating(
+            RED,
+            [reason],
+            [_settled_window(ht, iv, RED, [reason]) for ht, iv in windows],
+        )
+
     if not windows:
-        return DayRating(RED, ["No high tide holds a rowable depth in daylight today."])
+        return DayRating(RED, ["No tide holds 3.7m for 1h in daylight today."])
 
     for hours, limit in sorted(thresholds.cumulative_rain_mm.items()):
         fallen = cumulative_rain_mm.get(hours)
         if fallen is not None and fallen > limit:
+            reason = (
+                f"{fallen:.0f} mm of rain in the last {hours}h, over the "
+                f"{limit:.0f} mm limit."
+            )
             return DayRating(
                 RED,
-                [
-                    f"{fallen:.0f} mm of rain in the last {hours}h, over the "
-                    f"{limit:.0f} mm limit."
-                ],
+                [reason],
+                [_settled_window(ht, iv, RED, [reason]) for ht, iv in windows],
             )
 
     day_reasons: list[str] = []
@@ -210,7 +247,11 @@ def rate_day(
         day_reasons.append(UNCONFIRMED_WEIR)
 
     if daily is None and not slots:
-        return DayRating(None, [*day_reasons, "No forecast reaches this day yet."])
+        return DayRating(
+            None,
+            [*day_reasons, "No forecast reaches this day yet."],
+            [_settled_window(ht, iv, None, []) for ht, iv in windows],
+        )
 
     rated = [
         _rate_one_window(high_tide, interval, slots, daily, thresholds, now)

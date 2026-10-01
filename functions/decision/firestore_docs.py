@@ -12,11 +12,14 @@ from models import DayRating, WindowRating
 
 def _window_entry(window: WindowRating) -> dict:
     start, end = window.window if window.window else (None, None)
+    tide_start, tide_end = window.tide_window if window.tide_window else (None, None)
     return {
         "high_tide_at": window.high_tide_at,
         "rating": window.rating,
         "window_start": start,
         "window_end": end,
+        "tide_window_start": tide_start,
+        "tide_window_end": tide_end,
         "reasons": list(window.reasons),
     }
 
