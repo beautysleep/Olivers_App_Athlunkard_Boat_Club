@@ -67,16 +67,19 @@ class CalendarScreen extends StatelessWidget {
                   liveWeather: appState.liveWeatherFor(day.date),
                   liveWaterRelease: appState.liveWaterRelease,
                   liveDaylight: appState.liveDaylightFor(day.date),
-                  onSendProposal: (highTide, meetingTime) {
-                    appState.sendProposal(
+                  onSendProposal: (highTide, meetingTime) async {
+                    final sent = await appState.sendProposal(
                       day,
                       highTide,
                       meetingTime: meetingTime,
                     );
+                    if (!context.mounted) return;
                     _snack(
                       context,
-                      'Proposal sent \u2014 meet at '
-                      '${formatTime(meetingTime)}.',
+                      sent
+                          ? 'Proposal sent \u2014 meet at '
+                                '${formatTime(meetingTime)}.'
+                          : 'Could not send the proposal \u2014 try again.',
                     );
                   },
                   onMarkUnavailable: () {

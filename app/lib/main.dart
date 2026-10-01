@@ -5,6 +5,7 @@ import 'features/authentication/login_screen.dart';
 import 'features/home/role_home.dart';
 import 'services/app_scope.dart';
 import 'services/app_state.dart';
+import 'services/firestore_session_repository.dart';
 import 'services/firestore_tide_repository.dart';
 import 'services/firestore_day_rating_repository.dart';
 import 'services/firestore_water_release_repository.dart';
@@ -12,6 +13,8 @@ import 'services/firestore_weather_repository.dart';
 import 'services/firebase_member_directory.dart';
 import 'services/member_directory.dart';
 import 'services/mock_club_repository.dart';
+import 'services/push_registration.dart';
+import 'services/session_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +41,10 @@ class _AthlunkardBoatClubAppState extends State<AthlunkardBoatClubApp> {
         weatherRepository: FirestoreWeatherRepository(),
         waterReleaseRepository: FirestoreWaterReleaseRepository(),
         dayRatingRepository: FirestoreDayRatingRepository(),
+        sessionRepository: const FirestoreSessionRepository(),
+        pushRegistration: PushRegistration(
+          endpoint: Uri.parse(registerDeviceTokenEndpoint),
+        ),
         memberDirectory: FirebaseMemberDirectory(
           membershipEndpoint: Uri.parse(membershipEndpoint),
         ),

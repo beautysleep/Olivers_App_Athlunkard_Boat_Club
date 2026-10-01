@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Mandatory at the targeted SDK level (Android 13+) for any
+         notification to show — without it a push arrives but is silently
+         swallowed rather than shown. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="athlunkard_boat_club"
         android:name="${applicationName}"
