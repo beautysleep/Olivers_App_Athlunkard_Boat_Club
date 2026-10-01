@@ -167,7 +167,9 @@ def register_device_token(request):
     except MalformedRequest:
         return ("A token is needed.\n", 400)
 
+    # merge=True so a future field on this document (e.g. last_seen, platform)
+    # is not clobbered by a token-only re-register on every app launch.
     firestore.client().collection(DEVICE_TOKENS).document(claims["uid"]).set(
-        {"token": registration.token}
+        {"token": registration.token}, merge=True
     )
     return ("", 200)
