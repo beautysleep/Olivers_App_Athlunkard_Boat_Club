@@ -58,7 +58,7 @@ def test_a_discharge_turns_every_day_red_at_once():
 
 
 def test_a_day_whose_tide_never_reaches_a_rowable_depth_is_red():
-    tide, weather = build({"25": {"high_metres": 3.9}})
+    tide, weather = build({"25": {"high_metres": 3.6}})
 
     rated = rate_all_days(tide, weather, CLEAR, computed_at=utc(25, 6))
 
@@ -89,9 +89,9 @@ def test_days_already_past_are_not_rated():
 def test_only_today_is_measured_against_the_clock():
     tide, weather = build({"25": {}, "26": {}})
 
-    # Noon on the 25th is past that day's noon high tide, but must not touch
-    # the 26th's.
-    rated = rate_all_days(tide, weather, CLEAR, computed_at=utc(25, 13))
+    # 14:00 on the 25th leaves under an hour of today's tide still above 3.7m,
+    # so the window drops out; the 26th's noon tide must not be touched.
+    rated = rate_all_days(tide, weather, CLEAR, computed_at=utc(25, 14))
 
     assert rated["2026-08-25"]["windows"][0]["window_start"] is None
     assert rated["2026-08-26"]["windows"][0]["window_start"] is not None

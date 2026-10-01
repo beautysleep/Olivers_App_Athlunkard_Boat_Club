@@ -14,8 +14,11 @@ Hard overrides first, each settling the whole day:
   has never been observed to use is *unparsed*, which holds the day back from
   green but does not force red — one rewording upstream should not turn every
   day red, and the card links the coach to the PDF.
-- **Daylight and depth.** A day whose high waters never hold a rowable depth in
-  daylight is red.
+- **Daylight and depth.** A day whose only high waters cannot hold `MINIMUM_ROWABLE_HEIGHT_METRES`
+  for `MINIMUM_SESSION_LENGTH` of daylight is red. A high-tide peak is not the
+  gate — a smaller tide can still qualify if the curve keeps the depth long
+  enough, and a bigger one can be dropped if daylight only covers a sliver of
+  its curve.
 - **Cumulative rain** over the 24/48/72h bands.
 
 Then, per rowable high tide:
@@ -24,11 +27,17 @@ Then, per rowable high tide:
   half-cosine between the neighbouring lows — the curve behind the rule of
   twelfths — gives the times the water crosses `MINIMUM_ROWABLE_HEIGHT_METRES`,
   so a bigger tide holds the depth for longer. Each limb is measured against its
-  own low, so an uneven pair gives an asymmetric window.
-- Within it, the longest unbroken stretch of at least 1.5h where wind and rain
-  both stay under threshold. A crew cannot land mid-session because the wind got
-  up, so a stretch counts only if it holds throughout.
+  own low, so an uneven pair gives an asymmetric window. The window is then
+  clipped to daylight, and dropped if less than `MINIMUM_SESSION_LENGTH` of it
+  survives.
+- Within it, the longest unbroken stretch of at least `MINIMUM_SESSION_LENGTH`
+  where wind and rain both stay under threshold. A crew cannot land mid-session
+  because the wind got up, so a stretch counts only if it holds throughout.
 - Meeting the all-boats limits is green; only the big-boat limits, amber.
+- The daylight-clipped tide window is written to `day_ratings` even on
+  override-red and "no forecast yet" days (`tide_window_start` /
+  `tide_window_end`), so the app can still show when the water would have been
+  rowable — a bare "no rowing" hides what was lost.
 
 A day's two high tides are rated **separately** — they are separately
 committable — and the day's own rating is the best of them.
@@ -47,9 +56,12 @@ is clipped to the time that is left.
 
 ## Thresholds
 
-All provisional, all in `models.py`, none confirmed with the coaches. See
-`Data_needed_for_rowing_safety_decision.md`. `MINIMUM_ROWABLE_HEIGHT_METRES` and
-the wind/rain limits are the ones to settle first.
+All provisional, all in `models.py` (plus `MINIMUM_SESSION_LENGTH` in
+`engine.py`), none confirmed with the coaches. See
+`Data_needed_for_rowing_safety_decision.md`. The working figures are
+`MINIMUM_ROWABLE_HEIGHT_METRES = 3.7` m and `MINIMUM_SESSION_LENGTH = 1h` —
+replacing an older 4.2 m high-tide proxy that confused "peak height" with the
+real question of "time at depth". Settle these with the coaches first.
 
 ## Running it
 

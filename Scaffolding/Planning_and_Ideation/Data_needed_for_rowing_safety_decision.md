@@ -171,16 +171,34 @@ constraints can force **red** regardless of everything else.
 
 ## Provisional thresholds & session-window logic
 
-> **Status: provisional (added 2026-07-18).** Working values to build and test
-> against — **not yet confirmed with the coaches.** Kept as tunable parameters,
-> never hard-coded; supersede once the coaches give real figures.
+> **Status: provisional (added 2026-07-18, revised 2026-10-01).** Working values
+> to build and test against — **not yet confirmed with the coaches.** Kept as
+> tunable parameters, never hard-coded; supersede once the coaches give real
+> figures.
 
-The routine (non-override) decision is **windowed**, not a daily snapshot. Within
-a day's tide-high + daylight window, find the **longest contiguous interval of at
-least 1.5 hours in which wind stays below threshold for the whole interval** —
-that interval is the session time recommended to the user. The same windowing is
-applied to rainfall. (Example: tide high 06:00–10:00 but wind acceptable only
-07:30–09:00 → recommend 07:30–09:00.)
+### Tide depth and session length
+
+The tide gate is **time at depth**, not a peak-height proxy. A day is routinely
+rowable if the water stays at or above **3.7 m** (`MINIMUM_ROWABLE_HEIGHT_METRES`)
+for an unbroken **1 hour** of daylight (`MINIMUM_SESSION_LENGTH`). The engine
+derives the stretch from the tide curve (half-cosine between the neighbouring
+lows), clips it to sunrise–sunset, and drops anything shorter than one hour. A
+smaller tide can therefore still qualify if its curve holds 3.7 m long enough; a
+bigger one can be dropped if only a sliver of its curve falls in daylight.
+
+> **Earlier draft used a 4.2 m high-tide target.** Retired 2026-10-01 — the real
+> question is whether the water will be deep enough for long enough, not how
+> high it peaks. 4.2 m was only ever a stand-in for "high enough to hold 3.7 m
+> long enough".
+
+### Wind and rain
+
+The routine (non-override) decision is **windowed**, not a daily snapshot.
+Within each day's rowable tide window, find the **longest contiguous interval of
+at least `MINIMUM_SESSION_LENGTH` in which wind stays below threshold for the
+whole interval** — that interval is the session time recommended to the user.
+The same windowing is applied to rainfall. (Example: tide holds 3.7 m from
+06:00–10:00 but wind is acceptable only 07:30–09:00 → recommend 07:30–09:00.)
 
 | Metric | Big boats | All boats |
 | --- | --- | --- |
