@@ -20,15 +20,29 @@ class LiveWindowRating {
     required this.reasons,
     this.start,
     this.end,
+    this.tideStart,
+    this.tideEnd,
   });
 
   final DateTime highTideTime;
   final Conditions? conditions;
+
+  /// The weather-calm stretch inside the tide window — null when weather ruled
+  /// it out, or when an override settled the day without weather doing any
+  /// work.
   final DateTime? start;
   final DateTime? end;
+
+  /// The daylight-clipped stretch the water stays at a rowable depth. Shown on
+  /// the card even on override-red days, so a coach sees what the tide was
+  /// offering when conditions ruled it out.
+  final DateTime? tideStart;
+  final DateTime? tideEnd;
+
   final List<String> reasons;
 
   bool get isRowable => start != null && end != null;
+  bool get hasTideWindow => tideStart != null && tideEnd != null;
 }
 
 class LiveDayRating {
@@ -70,6 +84,8 @@ LiveWindowRating _window(Map<String, dynamic> raw) => LiveWindowRating(
   conditions: _conditionsFrom(raw['rating'] as String?),
   start: raw['window_start'] as DateTime?,
   end: raw['window_end'] as DateTime?,
+  tideStart: raw['tide_window_start'] as DateTime?,
+  tideEnd: raw['tide_window_end'] as DateTime?,
   reasons: _reasons(raw['reasons']),
 );
 

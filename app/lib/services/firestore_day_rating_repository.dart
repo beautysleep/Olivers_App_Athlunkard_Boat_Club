@@ -32,6 +32,10 @@ class FirestoreDayRatingRepository {
           'high_tide_at': (raw['high_tide_at'] as Timestamp).toDate(),
           'window_start': (raw['window_start'] as Timestamp?)?.toDate(),
           'window_end': (raw['window_end'] as Timestamp?)?.toDate(),
+          'tide_window_start':
+              (raw['tide_window_start'] as Timestamp?)?.toDate(),
+          'tide_window_end':
+              (raw['tide_window_end'] as Timestamp?)?.toDate(),
         },
     ],
   };

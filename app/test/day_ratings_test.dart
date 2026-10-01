@@ -15,13 +15,17 @@ Map<String, dynamic> _document() => {
       'rating': 'red',
       'window_start': null,
       'window_end': null,
-      'reasons': ['No unbroken 1.5h stretch stays under the limits.'],
+      'tide_window_start': DateTime.utc(2026, 8, 26, 5, 30),
+      'tide_window_end': DateTime.utc(2026, 8, 26, 8, 0),
+      'reasons': ['No unbroken 1h stretch stays under the limits.'],
     },
     {
       'high_tide_at': _eveningTide,
       'rating': 'green',
       'window_start': DateTime.utc(2026, 8, 26, 16, 36),
       'window_end': DateTime.utc(2026, 8, 26, 20, 36),
+      'tide_window_start': DateTime.utc(2026, 8, 26, 16, 0),
+      'tide_window_end': DateTime.utc(2026, 8, 26, 21, 0),
       'reasons': <String>[],
     },
   ],
@@ -38,6 +42,21 @@ void main() {
         Conditions.green,
       ]);
       expect(rating.windows.last.start!.toUtc().hour, 16);
+    });
+
+    test('each tide carries the depth window the engine kept it for', () {
+      final rating = liveDayRatingFromDocument(_document())!;
+
+      final morning = rating.forHighTide(_morningTide)!;
+      expect(morning.tideStart, DateTime.utc(2026, 8, 26, 5, 30));
+      expect(morning.tideEnd, DateTime.utc(2026, 8, 26, 8, 0));
+
+      // The evening weather window (16:36–20:36) sits inside its wider tide
+      // window (16:00–21:00) — the two must stay separate so the card can show
+      // both.
+      final evening = rating.forHighTide(_eveningTide)!;
+      expect(evening.tideStart, DateTime.utc(2026, 8, 26, 16, 0));
+      expect(evening.tideEnd, DateTime.utc(2026, 8, 26, 21, 0));
     });
 
     test('finds the verdict for a tide by its time', () {

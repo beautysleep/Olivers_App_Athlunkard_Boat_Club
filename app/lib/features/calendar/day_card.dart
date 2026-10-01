@@ -224,13 +224,13 @@ class _DayCardState extends State<DayCard> {
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
             ),
             const Divider(height: 12),
-            ..._highTideRows(),
+            ?_dayLevelActionRow(),
+            _daylightRow(),
             _windRow(),
             _rainRow(),
             _waterReleaseRow(),
-            _daylightRow(),
-            const SizedBox(height: 16),
-            ..._actions(context),
+            ..._perTideSections(),
+            ..._strandedSessionActions(),
             ..._additionalInformation(),
           ],
         ),
@@ -347,36 +347,80 @@ class _DayCardState extends State<DayCard> {
     }
   }
 
-  List<Widget> _actions(BuildContext context) {
-    final windows = _windows;
+  /// Each tide's rows (high-tide value, depth window, best-weather) followed by
+  /// its own action button inline, so a coach proposing an evening tide clicks
+  /// the button sitting under that evening's numbers rather than scanning past
+  /// the morning's. The sections are divided from the day-level info above
+  /// them, since the two tides are each independently committable and shouldn't
+  /// look like variations of one metric.
+  List<Widget> _perTideSections() {
+    final windows = widget.offerableSessions;
+    if (windows == null) {
+      return [
+        const Divider(height: 20),
+        _missing(Icons.waves, 'High tide'),
+      ];
+    }
+    if (windows.isEmpty) {
+      return [
+        const Divider(height: 20),
+        _metric(
+          Icons.waves,
+          'High tide',
+          'no tide holds 3.7m for 1h in daylight',
+          status: MetricStatus.live,
+        ),
+      ];
+    }
+    final nameWindowsByTime = _nameWindowsByTime(windows);
+    final sections = <Widget>[];
+    for (var i = 0; i < windows.length; i++) {
+      sections.addAll([
+        const Divider(height: 20),
+        _metric(
+          Icons.waves,
+          windows.length > 1 ? 'High tide ${i + 1}' : 'High tide',
+          '${formatTime(windows[i].highTide.localTime)} \u00b7 '
+          '${windows[i].highTide.heightMetres.toStringAsFixed(1)}m',
+          status: MetricStatus.live,
+        ),
+        ..._tideWindowRows(windows[i].highTide.localTime),
+      ]);
+      final action = _windowAction(windows[i], nameWindowsByTime);
+      if (action != null) {
+        sections.addAll([const SizedBox(height: 6), action]);
+      }
+    }
+    return sections;
+  }
+
+  bool _nameWindowsByTime(List<HighTideSession> windows) =>
+      windows.length + widget.sessionsWithoutAWindow.length > 1;
+
+  /// A session that was proposed for a tide the engine no longer keeps still
+  /// matters \u2014 this collects those at the bottom of the card so the coach can
+  /// re-open them, next to the current day's info rather than lost to history.
+  List<Widget> _strandedSessionActions() {
     final stranded = widget.sessionsWithoutAWindow;
-    final nameWindowsByTime = windows.length + stranded.length > 1;
-
-    final actions = <Widget>[
-      for (final window in windows) ?_windowAction(window, nameWindowsByTime),
-      for (final session in stranded) _openSession(session, nameWindowsByTime),
-    ];
-    final dayAction = _dayAction(nothingOfferedForAWindow: actions.isEmpty);
-    if (dayAction != null) actions.add(dayAction);
-
+    if (stranded.isEmpty) return const [];
+    final nameWindowsByTime = _nameWindowsByTime(_windows);
     return [
-      for (var i = 0; i < actions.length; i++) ...[
+      const SizedBox(height: 10),
+      for (var i = 0; i < stranded.length; i++) ...[
         if (i > 0) const SizedBox(height: 6),
-        actions[i],
+        _openSession(stranded[i], nameWindowsByTime),
       ],
     ];
   }
 
-  /// Null when there is nothing this viewer can do with the window.
+  /// Null when there is nothing this viewer can do with the tide: an athlete
+  /// has no propose action, and a session already proposed takes the "Open"
+  /// button rather than another "Propose".
   Widget? _windowAction(HighTideSession window, bool nameWindowsByTime) {
     final time = formatTime(window.highTide.localTime);
     final session = window.session;
     if (session != null) return _openSession(session, nameWindowsByTime);
-    if (widget.role != UserRole.coach ||
-        widget.unavailable ||
-        _rating == Conditions.red) {
-      return null;
-    }
+    if (widget.role != UserRole.coach || widget.unavailable) return null;
 
     // The engine rates each tide separately, so a windy morning does not have
     // to take a calm evening down with it.
@@ -470,11 +514,19 @@ class _DayCardState extends State<DayCard> {
     ),
   );
 
-  /// The coach's own availability holds even on a day with no rowable window,
-  /// which is why it does not sit behind one.
-  Widget? _dayAction({required bool nothingOfferedForAWindow}) {
+  /// Sits at the very top of the back of the card so a coach's own
+  /// availability call is the first thing they land on, not the last. Null
+  /// collapses out via the `?` spread so an athlete viewing a day with
+  /// sessions already proposed does not see a blank line here.
+  Widget? _dayLevelActionRow() {
+    final row = _dayLevelAction();
+    if (row == null) return null;
+    return Padding(padding: const EdgeInsets.only(bottom: 10), child: row);
+  }
+
+  Widget? _dayLevelAction() {
     if (widget.role != UserRole.coach) {
-      if (!nothingOfferedForAWindow) return null;
+      if (_proposedSessions.isNotEmpty) return null;
       return _note(
         widget.unavailable ? 'No session — coach away' : 'No session proposed',
       );
@@ -495,57 +547,42 @@ class _DayCardState extends State<DayCard> {
   Widget _note(String text) =>
       Text(text, style: TextStyle(fontSize: 12, color: Colors.grey.shade600));
 
-  List<Widget> _highTideRows() {
-    final windows = widget.offerableSessions;
-    if (windows == null) {
-      return [_missing(Icons.waves, 'High tide')];
-    }
-    if (windows.isEmpty) {
-      return [
-        _metric(
-          Icons.waves,
-          'High tide',
-          'none in daylight ≥${kMinimumRowableHighTideMetres}m',
-          status: MetricStatus.live,
-        ),
-      ];
-    }
-    return [
-      for (var i = 0; i < windows.length; i++) ...[
-        _metric(
-          Icons.waves,
-          windows.length > 1 ? 'High tide ${i + 1}' : 'High tide',
-          '${formatTime(windows[i].highTide.localTime)} · '
-          '${windows[i].highTide.heightMetres.toStringAsFixed(1)}m',
-          status: MetricStatus.live,
-        ),
-        _usableWindowRow(windows[i].highTide.localTime),
-      ],
-    ];
-  }
-
-  /// [verdict] null covers both "the engine hasn't rated this day" and "no
-  /// window entry matches this tide" — either way nothing was computed, so
-  /// both get the same "No data" treatment as every other metric row. A
-  /// ruled-out tide is different: the engine *did* compute an answer, it's
-  /// just negative, so it says so rather than claiming no data exists.
-  Widget _usableWindowRow(DateTime highTideTime) {
+  /// Shows the full depth window the engine kept (even on override-red days,
+  /// so a coach sees what the tide offered when it was ruled out), and only
+  /// adds a "Best weather" row when wind or rain narrowed the usable part.
+  /// The ruled-out verdict itself lives in the action area under the metrics,
+  /// so it is not restated here.
+  List<Widget> _tideWindowRows(DateTime highTideTime) {
     final verdict = widget.liveDayRating?.forHighTide(highTideTime);
-    if (verdict == null) return _missing(Icons.schedule, 'Usable window');
-    if (!verdict.isRowable) {
-      return _metric(
+    if (verdict == null || !verdict.hasTideWindow) {
+      return [_missing(Icons.schedule, 'Tide window')];
+    }
+    final tideStart = verdict.tideStart!;
+    final tideEnd = verdict.tideEnd!;
+    final tideLabel = '${formatTime(tideStart)}–${formatTime(tideEnd)}';
+    final rows = <Widget>[
+      _metric(
         Icons.schedule,
-        'Usable window',
-        'not rowable',
-        status: MetricStatus.danger,
+        'Tide window',
+        tideLabel,
+        status: MetricStatus.live,
+      ),
+    ];
+    final weatherStart = verdict.start;
+    final weatherEnd = verdict.end;
+    if (weatherStart != null &&
+        weatherEnd != null &&
+        (weatherStart != tideStart || weatherEnd != tideEnd)) {
+      rows.add(
+        _metric(
+          Icons.air,
+          'Best weather',
+          '${formatTime(weatherStart)}–${formatTime(weatherEnd)}',
+          status: MetricStatus.live,
+        ),
       );
     }
-    return _metric(
-      Icons.schedule,
-      'Usable window',
-      '${formatTime(verdict.start!)}–${formatTime(verdict.end!)}',
-      status: MetricStatus.live,
-    );
+    return rows;
   }
 
   Widget _windRow() {

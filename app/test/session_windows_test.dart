@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:athlunkard_boat_club/models/session.dart';
 import 'package:athlunkard_boat_club/models/user_profile.dart';
+import 'package:athlunkard_boat_club/services/day_ratings.dart';
 import 'package:athlunkard_boat_club/services/session_windows.dart';
 import 'package:athlunkard_boat_club/services/tide_windows.dart';
 
@@ -61,5 +62,75 @@ void main() {
 
       expect(byHighTide.single.session, isNull);
     });
+  });
+
+  group('daySessionsFromRating', () {
+    LiveWindowRating entryFor(
+      LiveHighTide highTide, {
+      required bool rowable,
+    }) => LiveWindowRating(
+      highTideTime: highTide.localTime,
+      conditions: rowable ? Conditions.green : Conditions.red,
+      tideStart: rowable ? highTide.localTime.subtract(const Duration(hours: 2)) : null,
+      tideEnd: rowable ? highTide.localTime.add(const Duration(hours: 2)) : null,
+      reasons: const [],
+    );
+
+    LiveDayRating ratingOf(List<LiveWindowRating> entries) => LiveDayRating(
+      conditions: Conditions.green,
+      reasons: const [],
+      windows: entries,
+    );
+
+    test('offers only tides the engine kept a depth window for', () {
+      // The club has mock tide data for both tides, but the engine only kept
+      // the evening one (e.g. the morning tide held 3.7m for too little
+      // daylight) — the morning must not reappear in the offers.
+      final morning = _highTide(7);
+      final evening = _highTide(19);
+      final rating = ratingOf([
+        entryFor(morning, rowable: false),
+        entryFor(evening, rowable: true),
+      ]);
+
+      final sessions = daySessionsFromRating(
+        highs: [morning, evening],
+        rating: rating,
+        sessionsThatDay: const [],
+      );
+
+      expect(sessions.offerableWindows!.map((w) => w.highTide), [evening]);
+    });
+
+    test('without a rating the day is treated as "no data", not open-season', () {
+      // Falling back to the live tide alone would reintroduce the 4.2m proxy
+      // the engine replaced; the card must say "No data" until the engine's
+      // verdict arrives.
+      final sessions = daySessionsFromRating(
+        highs: [_highTide(7)],
+        rating: null,
+        sessionsThatDay: const [],
+      );
+
+      expect(sessions.offerableWindows, isNull);
+    });
+
+    test(
+      'a session proposed for a tide the engine no longer keeps is stranded, not lost',
+      () {
+        final morning = _highTide(7);
+        final rating = ratingOf([entryFor(morning, rowable: false)]);
+        final strandedSession = _sessionAt(morning.localTime);
+
+        final sessions = daySessionsFromRating(
+          highs: [morning],
+          rating: rating,
+          sessionsThatDay: [strandedSession],
+        );
+
+        expect(sessions.offerableWindows, isEmpty);
+        expect(sessions.sessionsWithoutAWindow, [strandedSession]);
+      },
+    );
   });
 }

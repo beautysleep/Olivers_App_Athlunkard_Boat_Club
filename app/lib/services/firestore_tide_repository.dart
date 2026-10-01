@@ -4,7 +4,7 @@ import 'tide_windows.dart';
 
 class FirestoreTideRepository {
   /// Keyed by 'YYYY-MM-DD'. Both of a day's high waters are kept; which of them
-  /// can actually be rowed is [offerableHighTides]' decision, not this one's.
+  /// can actually be rowed is the decision engine's call, not this one's.
   ///
   /// Firestore is reached inside the method rather than held in a field, so
   /// constructing this cannot fail when Firebase is not initialised — callers
