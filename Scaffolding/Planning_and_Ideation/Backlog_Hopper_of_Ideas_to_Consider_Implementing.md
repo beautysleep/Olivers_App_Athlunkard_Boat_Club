@@ -20,6 +20,7 @@ first raised and who suggested it.
 | 9 | **As a** new user, **I want** the tide and weather figures to link to their sources the way the water-release figure does, **so that** every number on a day card is verifiable, not just the ESB one. | 2026-08-23 | Marcus |
 | 10 | **As a** coach, **I want** to choose which of a day's two daylight high tides a session is proposed for, **so that** the proposed time matches a real rowable window (today `sendProposal` is pinned to a single mock tide). | 2026-08-23 | Marcus |
 | 11 | **As a** coach, **I want** the day's green/amber/red rating to come from real conditions rather than mock data, **so that** the headline call is as trustworthy as the metrics behind it. Blocked on the row/no-row decision engine — the rating *is* its output, so there is nothing honest to replace the mock with until it exists, and the mock repository also generates the calendar days themselves. Do it on the decision-engine branch. | 2026-08-23 | Marcus |
+| 12 | **As a** coach signing in to the real app, **I want** no seeded demo sessions, welcome notifications, or fake athletes greeting me on day one, **so that** I'm not pre-populated with Saoirse/Aoife/Cian commitments or a "You moved an upcoming session to land training" alert I never sent. Replace `MockClubRepository` with a Firestore-backed one (or at minimum strip the `_seed()` sessions + notifications + fake athletes). The calendar days themselves still need a source — expect to derive them from the live `tide_predictions` horizon when the mock goes. | 2026-10-01 | Marcus |
 
 ---
 
