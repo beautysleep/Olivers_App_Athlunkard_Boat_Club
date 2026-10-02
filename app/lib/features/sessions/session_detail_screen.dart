@@ -34,7 +34,16 @@ class SessionDetailScreen extends StatelessWidget {
       );
     }
 
-    final style = conditionStyle(session.conditionRating);
+    // Matches the day card: the chip's colour comes from the live engine
+    // verdict for the day the session is on, so it tracks conditions as they
+    // change rather than freezing at the rating the day happened to carry at
+    // proposal time. If the engine has not reached this day yet (far-future
+    // sessions, or just after a wipe), the stored snapshot is still shown
+    // rather than a blank chip — it's the last thing we knew about this day.
+    final liveRating = appState
+        .liveDayRatingFor(session.meetingTime)
+        ?.conditions;
+    final style = conditionStyle(liveRating ?? session.conditionRating);
 
     return Scaffold(
       appBar: AppBar(title: Text(formatDayDate(session.meetingTime))),
