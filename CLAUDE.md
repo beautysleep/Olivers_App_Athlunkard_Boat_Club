@@ -24,12 +24,23 @@ confirmation → change loop, and notifies the right people when things change.
 
 ## Current status
 
-The Flutter app is scaffolded and a **usable demo** is built and merged to
-`main`: login plus the coach / athlete / parent journeys, running on in-memory
-mock data behind a `ClubRepository` seam (see `app/`). Backend work has begun —
-the first live data source, a WorldTides **tide fetcher** for Limerick Dock, is
-being built end-to-end (Cloud Function → Firestore → app). GCP infrastructure
-(Terraform) is not yet stood up.
+The Flutter app is on real users' phones (Android; iOS toolchain not yet set
+up). Sign-in is against Firebase Identity Platform, with invite codes deciding
+the role. Live conditions come from Cloud Functions: tide (WorldTides →
+Firestore for Limerick Dock), weather (OpenWeather), water release (ESB PDF
+scrape of Parteen Weir), and a decision engine that reduces the four of them
+to a day rating + per-tide depth window written to `day_ratings`. The whole
+GCP side is Terraform-provisioned.
+
+Sessions (propose / respond / cancel) also live behind their own Firestore-
+backed `SessionRepository` and a `sessions` Cloud Function. **Push
+notifications on a new proposal** are *provisionally implemented* — wired end
+to end and verified from a single device, pending a real two-device test with
+a second person before being considered confirmed.
+
+The remaining mock layer is `MockClubRepository`, which still owns the
+calendar day list, coach-availability, in-app notifications, and the fake
+athlete roster (backlog #12 — strip it when a real source for each exists).
 
 ## How to work with me (important)
 
