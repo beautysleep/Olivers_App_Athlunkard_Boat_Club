@@ -1,33 +1,57 @@
-/// Why an 06:41 high tide defaults to 06:00 and not 06:30: the crew must
-/// already be at the club this long beforehand to get on the water in time.
-/// Provisional — settle the real figure with the coaches.
-const kMinimumMinutesBeforeHighTide = 30;
+/// Where the "Meet at" wheel in the day card lands when it opens, and the
+/// bounds it refuses to scroll past. Picking a time is otherwise free-form —
+/// 15-minute ticks, no preset list of options.
+library;
 
-/// Each step back is another half hour on the water, so this is really how many
-/// session lengths the coach chooses between.
-const kMeetingTimeOptions = 3;
+/// The default meeting time opens this long before the earliest rowable
+/// water, which is almost always what a coach wants: on the slipway as the
+/// water comes up. They can scroll either way from there.
+const kDefaultMinutesBeforeRowableWater = 30;
 
-DateTime halfHourMarkAtOrBefore(DateTime time) => DateTime(
+/// How far back the wheel will scroll before the earliest rowable water. A
+/// coach can meet a session up to an hour before the water is there —
+/// anything longer suggests pointing at the wrong tide.
+const kEarliestMinutesBeforeRowableWater = 60;
+
+/// How late the wheel will scroll before the tide drops back below rowable.
+/// A session proposed with less than an hour of rowable water left over is
+/// almost certainly a mistake — scrolling right up to the end would.
+const kLatestMinutesBeforeRowableWaterEnds = 60;
+
+/// Floor a DateTime to the nearest 15-minute mark on or before it. The
+/// Cupertino time picker steps in quarters, so every default and bound has
+/// to land on one or the wheel's "initial" value snaps away from the number
+/// the coach was shown.
+DateTime quarterHourAtOrBefore(DateTime time) => DateTime(
   time.year,
   time.month,
   time.day,
   time.hour,
-  time.minute >= 30 ? 30 : 0,
+  time.minute - (time.minute % 15),
 );
 
-/// Rowing does not start at high water: the crew meets beforehand, and how far
-/// beforehand is the coach's call, not the tide's.
-List<DateTime> meetingTimesBefore(
-  DateTime highTide, {
-  int minimumMinutesBefore = kMinimumMinutesBeforeHighTide,
-  int options = kMeetingTimeOptions,
-}) {
-  final latestLaunchableTime = highTide.subtract(
-    Duration(minutes: minimumMinutesBefore),
-  );
-  final soonest = halfHourMarkAtOrBefore(latestLaunchableTime);
-  return [
-    for (var step = 0; step < options; step++)
-      soonest.subtract(Duration(minutes: 30 * step)),
-  ];
-}
+/// The time the "Meet at" wheel is pre-set to when the sheet first opens.
+DateTime defaultMeetingTime(DateTime earliestRowableWater) =>
+    quarterHourAtOrBefore(
+      earliestRowableWater.subtract(
+        const Duration(minutes: kDefaultMinutesBeforeRowableWater),
+      ),
+    );
+
+/// The earliest value the wheel will accept.
+DateTime earliestMeetingTime(DateTime earliestRowableWater) =>
+    quarterHourAtOrBefore(
+      earliestRowableWater.subtract(
+        const Duration(minutes: kEarliestMinutesBeforeRowableWater),
+      ),
+    );
+
+/// The latest value the wheel will accept — anchored to when the water
+/// drops back below rowable, not to high tide itself, because what the coach
+/// is really protecting is the length of the session that is still rowable
+/// at meeting time.
+DateTime latestMeetingTime(DateTime rowableWaterEnds) => quarterHourAtOrBefore(
+  rowableWaterEnds.subtract(
+    const Duration(minutes: kLatestMinutesBeforeRowableWaterEnds),
+  ),
+);

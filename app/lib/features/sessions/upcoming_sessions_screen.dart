@@ -68,7 +68,13 @@ class UpcomingSessionsScreen extends StatelessWidget {
       itemCount: sessions.length,
       itemBuilder: (context, i) {
         final s = sessions[i];
-        final style = conditionStyle(s.conditionRating);
+        // Match the day card and the session detail screen: live engine
+        // verdict for the day, falling back to the stored snapshot only when
+        // the engine has not yet reached this day.
+        final liveRating = appState
+            .liveDayRatingFor(s.meetingTime)
+            ?.conditions;
+        final style = conditionStyle(liveRating ?? s.conditionRating);
         final confirmed = !s.isCancelled && s.status == SessionStatus.confirmed;
         return Card(
           child: ListTile(

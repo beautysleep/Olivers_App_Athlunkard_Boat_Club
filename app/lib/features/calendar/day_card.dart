@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -432,7 +433,7 @@ class _DayCardState extends State<DayCard> {
     }
     return _fullWidth(
       FilledButton(
-        onPressed: () => _chooseMeetingTime(window.highTide),
+        onPressed: () => _chooseMeetingTime(window.highTide, verdict),
         child: Text(
           nameWindowsByTime ? 'Propose \u00b7 $time tide' : 'Send proposal',
         ),
@@ -440,7 +441,21 @@ class _DayCardState extends State<DayCard> {
     );
   }
 
-  Future<void> _chooseMeetingTime(LiveHighTide highTide) async {
+  Future<void> _chooseMeetingTime(
+    LiveHighTide highTide,
+    LiveWindowRating? verdict,
+  ) async {
+    // tideStart / tideEnd are the moments the water is rowable, which is the
+    // natural anchor the coach is picking around. If the engine's verdict is
+    // not available (should not happen for an offerable tide, but belt and
+    // braces), fall back to anchoring both bounds on the high-tide moment.
+    final earliestRowable = verdict?.tideStart ?? highTide.localTime;
+    final rowableEnds = verdict?.tideEnd ?? highTide.localTime;
+    final defaultTime = defaultMeetingTime(earliestRowable);
+    final earliest = earliestMeetingTime(earliestRowable);
+    final latest = latestMeetingTime(rowableEnds);
+    var picked = defaultTime;
+
     final chosen = await showModalBottomSheet<DateTime>(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -448,28 +463,43 @@ class _DayCardState extends State<DayCard> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 4),
               child: Text(
                 'Meet at',
-                style: Theme.of(sheetContext).textTheme.titleMedium,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
               child: Text(
-                'High tide ${formatTime(highTide.localTime)} \u00b7 '
-                'earlier means a longer session',
+                'Water reaches rowable depth at ${formatTime(earliestRowable)} '
+                '\u00b7 high tide ${formatTime(highTide.localTime)}',
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ),
-            for (final meetingTime in meetingTimesBefore(highTide.localTime))
-              ListTile(
-                leading: const Icon(Icons.schedule),
-                title: Text(formatTime(meetingTime)),
-                onTap: () => Navigator.of(sheetContext).pop(meetingTime),
+            SizedBox(
+              height: 150,
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.time,
+                minuteInterval: 15,
+                initialDateTime: defaultTime,
+                minimumDate: earliest,
+                maximumDate: latest,
+                use24hFormat: true,
+                onDateTimeChanged: (time) => picked = time,
               ),
-            const SizedBox(height: 8),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(sheetContext).pop(picked),
+                  child: const Text('Send proposal'),
+                ),
+              ),
+            ),
           ],
         ),
       ),
