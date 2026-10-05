@@ -74,7 +74,7 @@ def _overlap(
     return (start, end) if end > start else None
 
 
-def _slots_across(
+def _slots_covering(
     interval: tuple[datetime, datetime],
     hourly: list[WeatherSlot],
     daily: DailyWeather | None,
@@ -150,7 +150,7 @@ def _rate_one_window(
             )
         interval = remaining
 
-    across, approximated = _slots_across(interval, slots, daily)
+    across, approximated = _slots_covering(interval, slots, daily)
     reasons = [APPROXIMATED_FORECAST] if approximated else []
 
     for max_wind, max_rain, big_boats_only in (

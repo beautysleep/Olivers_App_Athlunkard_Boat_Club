@@ -106,10 +106,10 @@ class FirebaseMemberDirectory implements MemberDirectory {
   /// can actually do something about; the rest are one failure, because
   /// "malformed-credential" on a login screen helps nobody.
   Future<SignInOutcome> _attempt(
-    Future<SignInOutcome> Function() action,
+    Future<SignInOutcome> Function() firebaseCall,
   ) async {
     try {
-      return await action();
+      return await firebaseCall();
     } on FirebaseAuthException catch (error) {
       return switch (error.code) {
         'invalid-credential' ||

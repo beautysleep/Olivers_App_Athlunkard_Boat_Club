@@ -49,15 +49,15 @@ def apply_limerick_calibration(
     low_height_offset_m: float = DEFAULT_LOW_HEIGHT_OFFSET_M,
 ) -> list[TideExtreme]:
     calibrated: list[TideExtreme] = []
-    for e in extremes:
+    for extreme in extremes:
         height_offset = (
-            high_height_offset_m if e.kind == "High" else low_height_offset_m
+            high_height_offset_m if extreme.kind == "High" else low_height_offset_m
         )
         calibrated.append(
             TideExtreme(
-                kind=e.kind,
-                time_utc=e.time_utc + time_offset,
-                height_m=e.height_m + height_offset,
+                kind=extreme.kind,
+                time_utc=extreme.time_utc + time_offset,
+                height_m=extreme.height_m + height_offset,
             )
         )
     return calibrated

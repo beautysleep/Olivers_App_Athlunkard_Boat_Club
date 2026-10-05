@@ -167,7 +167,8 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+  DateTime _dateOnly(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
 
   List<Session> sessionsForDate(DateTime date) {
     final target = _dateOnly(date);
@@ -245,14 +246,14 @@ class AppState extends ChangeNotifier {
   LiveDayRating? liveDayRatingFor(DateTime date) =>
       _liveDayRatings[_dateKey(date)];
 
-  String _dateKey(DateTime d) =>
-      '${d.year.toString().padLeft(4, '0')}-'
-      '${d.month.toString().padLeft(2, '0')}-'
-      '${d.day.toString().padLeft(2, '0')}';
+  String _dateKey(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
 
   Session? sessionById(String id) {
-    for (final s in _sessions) {
-      if (s.id == id) return s;
+    for (final session in _sessions) {
+      if (session.id == id) return session;
     }
     return null;
   }
@@ -412,9 +413,9 @@ class AppState extends ChangeNotifier {
 
     final nowConfirmed = updated?.status == SessionStatus.confirmed;
     if (!wasConfirmed && nowConfirmed == true && updated != null) {
-      for (final a in updated.committedAthletes) {
+      for (final goingAthlete in updated.committedAthletes) {
         _notify(
-          a.id,
+          goingAthlete.id,
           NotificationType.sessionConfirmed,
           'Session confirmed',
           'The ${formatDayTime(session.meetingTime)} session is on — '

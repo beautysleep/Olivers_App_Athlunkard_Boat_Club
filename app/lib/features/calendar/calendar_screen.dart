@@ -12,7 +12,8 @@ import 'day_card.dart';
 class CalendarScreen extends StatelessWidget {
   const CalendarScreen({super.key});
 
-  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+  DateTime _dateOnly(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
 
   void _snack(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
