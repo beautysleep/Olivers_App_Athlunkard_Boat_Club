@@ -4,8 +4,8 @@ import '../../models/app_notification.dart';
 import '../../services/app_scope.dart';
 import '../sessions/session_detail_screen.dart';
 
-/// The in-app notification inbox. No real push yet (FCM comes later) — this is
-/// the same information an athlete/parent/coach would receive on their phone.
+/// The in-app companion to push: a scrollable archive of what each role has
+/// been pinged about, which the push notification itself does not keep.
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
 

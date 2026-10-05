@@ -244,9 +244,9 @@ class _DayCardState extends State<DayCard> {
   /// asks is "where did that come from?", and they should be able to go and
   /// look rather than take the app's word.
   List<Widget> _additionalInformation() {
-    final w = widget.liveWaterRelease;
+    final waterRelease = widget.liveWaterRelease;
     final reasons = widget.liveDayRating?.reasons ?? const <String>[];
-    if (w == null && reasons.isEmpty) return const [];
+    if (waterRelease == null && reasons.isEmpty) return const [];
     return [
       const SizedBox(height: 20),
       const Divider(height: 1),
@@ -273,7 +273,7 @@ class _DayCardState extends State<DayCard> {
           ),
         ),
       ],
-      if (w != null) ...[
+      if (waterRelease != null) ...[
         Text(
           'Water release',
           style: TextStyle(
@@ -283,10 +283,10 @@ class _DayCardState extends State<DayCard> {
           ),
         ),
       ],
-      if (w != null && w.statementRaw.isNotEmpty) ...[
+      if (waterRelease != null && waterRelease.statementRaw.isNotEmpty) ...[
         const SizedBox(height: 4),
         Text(
-          '“${w.statementRaw}”',
+          '“${waterRelease.statementRaw}”',
           style: TextStyle(
             fontSize: 11,
             height: 1.35,
@@ -295,9 +295,9 @@ class _DayCardState extends State<DayCard> {
           ),
         ),
       ],
-      if (w != null) ...[
+      if (waterRelease != null) ...[
         const SizedBox(height: 6),
-        _sourceLink('ESB Shannon Hydro Forecast (PDF)', w.sourceUrl),
+        _sourceLink('ESB Shannon Hydro Forecast (PDF)', waterRelease.sourceUrl),
       ],
     ];
   }

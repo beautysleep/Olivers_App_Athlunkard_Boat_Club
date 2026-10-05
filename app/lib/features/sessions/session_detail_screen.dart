@@ -80,10 +80,10 @@ class SessionDetailScreen extends StatelessWidget {
               spacing: 8,
               runSpacing: 4,
               children: [
-                for (final a in session.committedAthletes)
+                for (final athlete in session.committedAthletes)
                   Chip(
-                    avatar: ProfileCircle(user: a, radius: 12),
-                    label: Text(a.displayName),
+                    avatar: ProfileCircle(user: athlete, radius: 12),
+                    label: Text(athlete.displayName),
                   ),
               ],
             ),

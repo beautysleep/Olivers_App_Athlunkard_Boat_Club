@@ -56,8 +56,8 @@ def fetch_limerick_tides(
             "lon": payload.get("responseLon"),
         },
         "datum": payload.get("responseDatum"),
-        "tarbert_raw": [e.to_dict() for e in raw],
-        "limerick_calibrated": [e.to_dict() for e in calibrated],
+        "tarbert_raw": [extreme.to_dict() for extreme in raw],
+        "limerick_calibrated": [extreme.to_dict() for extreme in calibrated],
     }
 
 
@@ -68,19 +68,19 @@ def main(argv: list[str]) -> int:
 
     # Sanity summary on stderr, in LOCAL (Europe/Dublin) time so it matches
     # real-world tide tables — UTC would read an hour early in summer.
-    cal = result["limerick_calibrated"]
+    calibrated = result["limerick_calibrated"]
     print(
         f"\nResolved station: {result['station']} at {result['response_point']} "
-        f"(datum {result['datum']}). {len(cal)} extremes over {days} day(s) "
+        f"(datum {result['datum']}). {len(calibrated)} extremes over {days} day(s) "
         f"— Limerick Dock, local time:",
         file=sys.stderr,
     )
-    for e in cal:
+    for extreme in calibrated:
         # time_local is ISO "…THH:MM…+01:00"; show the day, HH:MM and offset.
-        iso = e["time_local"]
+        iso = extreme["time_local"]
         print(
-            f"  {e['kind']:<4} {iso[0:10]} {iso[11:16]} {iso[19:]}  "
-            f"{e['height_m']:>5.2f} m",
+            f"  {extreme['kind']:<4} {iso[0:10]} {iso[11:16]} {iso[19:]}  "
+            f"{extreme['height_m']:>5.2f} m",
             file=sys.stderr,
         )
     return 0

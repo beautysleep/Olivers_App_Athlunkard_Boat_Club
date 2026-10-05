@@ -167,7 +167,8 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+  DateTime _dateOnly(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
 
   List<Session> sessionsForDate(DateTime date) {
     final target = _dateOnly(date);
@@ -245,14 +246,14 @@ class AppState extends ChangeNotifier {
   LiveDayRating? liveDayRatingFor(DateTime date) =>
       _liveDayRatings[_dateKey(date)];
 
-  String _dateKey(DateTime d) =>
-      '${d.year.toString().padLeft(4, '0')}-'
-      '${d.month.toString().padLeft(2, '0')}-'
-      '${d.day.toString().padLeft(2, '0')}';
+  String _dateKey(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
 
   Session? sessionById(String id) {
-    for (final s in _sessions) {
-      if (s.id == id) return s;
+    for (final session in _sessions) {
+      if (session.id == id) return session;
     }
     return null;
   }
@@ -325,15 +326,13 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
-  /// Coach marks themselves unavailable for [day], so it won't be proposed.
   void markCoachUnavailable(DayConditions day) {
     if (_currentUser?.role != UserRole.coach) return;
     _repository.markCoachUnavailable(day.date);
     notifyListeners();
   }
 
-  /// Coach cancels a session — either pivoting to land training or outright.
-  /// Everyone who committed is notified.
+  /// Everyone who committed is notified of a cancel or pivot.
   Future<bool> cancelSession(
     Session session, {
     required bool pivotToLand,
@@ -348,7 +347,15 @@ class AppState extends ChangeNotifier {
       return false;
     }
     await loadSessions();
+    _notifyCommittedAthletesOfCancellation(session, pivotToLand: pivotToLand);
+    notifyListeners();
+    return true;
+  }
 
+  void _notifyCommittedAthletesOfCancellation(
+    Session session, {
+    required bool pivotToLand,
+  }) {
     final when = formatDayTime(session.meetingTime);
     for (final athlete in session.committedAthletes) {
       if (pivotToLand) {
@@ -370,12 +377,8 @@ class AppState extends ChangeNotifier {
         );
       }
     }
-    notifyListeners();
-    return true;
   }
 
-  // --- Athlete actions -----------------------------------------------------
-  /// Athlete accepts or declines a proposed session.
   Future<bool> respondToProposal(
     Session session, {
     required bool accept,
@@ -389,7 +392,7 @@ class AppState extends ChangeNotifier {
     }
 
     final wasConfirmed = session.status == SessionStatus.confirmed;
-    final alreadyIn = session.isCommitted(athlete);
+    final isNewCommitment = accept && !session.isCommitted(athlete);
 
     try {
       await repository.respondToSession(session.id, accept: accept);
@@ -399,49 +402,52 @@ class AppState extends ChangeNotifier {
     await loadSessions();
     final updated = sessionById(session.id);
 
-    // Notify the athlete's parent, if one is subscribed to them.
-    if (accept && !alreadyIn) {
-      for (final account in _roster) {
-        if (account.role == UserRole.parent && account.childId == athlete.id) {
-          _notify(
-            account.id,
-            NotificationType.childCommitted,
-            '${athlete.displayName.split(' ').first} is attending a session',
-            '${athlete.displayName.split(' ').first} is planning to attend '
-                'the ${formatDayTime(session.meetingTime)} session.',
-            sessionId: session.id,
-          );
-        }
-      }
-    }
-
-    // If this response tipped it over the threshold, tell everyone going.
-    final nowConfirmed = updated?.status == SessionStatus.confirmed;
-    if (!wasConfirmed && nowConfirmed == true && updated != null) {
-      for (final a in updated.committedAthletes) {
-        _notify(
-          a.id,
-          NotificationType.sessionConfirmed,
-          'Session confirmed',
-          'The ${formatDayTime(session.meetingTime)} session is on — '
-              '${updated.committedCount} going.',
-          sessionId: session.id,
-        );
-      }
-      _notify(
-        session.coach.id,
-        NotificationType.sessionConfirmed,
-        'Session confirmed',
-        '${updated.committedCount} athletes are going to the '
-            '${formatDayTime(session.meetingTime)} session.',
-        sessionId: session.id,
-      );
+    if (isNewCommitment) _notifyParentOfCommitment(athlete, session);
+    if (!wasConfirmed &&
+        updated != null &&
+        updated.status == SessionStatus.confirmed) {
+      _notifyEveryoneSessionConfirmed(updated);
     }
     notifyListeners();
     return true;
   }
 
-  // --- Helpers -------------------------------------------------------------
+  void _notifyParentOfCommitment(UserProfile athlete, Session session) {
+    final firstName = athlete.displayName.split(' ').first;
+    for (final account in _roster) {
+      if (account.role == UserRole.parent && account.childId == athlete.id) {
+        _notify(
+          account.id,
+          NotificationType.childCommitted,
+          '$firstName is attending a session',
+          '$firstName is planning to attend '
+              'the ${formatDayTime(session.meetingTime)} session.',
+          sessionId: session.id,
+        );
+      }
+    }
+  }
+
+  void _notifyEveryoneSessionConfirmed(Session confirmed) {
+    final when = formatDayTime(confirmed.meetingTime);
+    for (final goingAthlete in confirmed.committedAthletes) {
+      _notify(
+        goingAthlete.id,
+        NotificationType.sessionConfirmed,
+        'Session confirmed',
+        'The $when session is on — ${confirmed.committedCount} going.',
+        sessionId: confirmed.id,
+      );
+    }
+    _notify(
+      confirmed.coach.id,
+      NotificationType.sessionConfirmed,
+      'Session confirmed',
+      '${confirmed.committedCount} athletes are going to the $when session.',
+      sessionId: confirmed.id,
+    );
+  }
+
   void _notify(
     String recipientId,
     NotificationType type,

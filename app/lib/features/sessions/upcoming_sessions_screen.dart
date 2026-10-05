@@ -13,16 +13,16 @@ import 'session_detail_screen.dart';
 class UpcomingSessionsScreen extends StatelessWidget {
   const UpcomingSessionsScreen({super.key});
 
-  String _statusLine(Session s) {
-    switch (s.lifecycle) {
+  String _statusLine(Session session) {
+    switch (session.lifecycle) {
       case SessionLifecycle.cancelledWeatherPivot:
         return 'Moved to land training';
       case SessionLifecycle.cancelledOutright:
         return 'Cancelled';
       case SessionLifecycle.proposed:
-        return s.status == SessionStatus.confirmed
-            ? 'Confirmed · ${s.committedCount} going'
-            : 'Not yet possible · ${s.committedCount}/${s.minimumCrew}';
+        return session.status == SessionStatus.confirmed
+            ? 'Confirmed · ${session.committedCount} going'
+            : 'Not yet possible · ${session.committedCount}/${session.minimumCrew}';
     }
   }
 
@@ -66,16 +66,17 @@ class UpcomingSessionsScreen extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.all(12),
       itemCount: sessions.length,
-      itemBuilder: (context, i) {
-        final s = sessions[i];
+      itemBuilder: (context, index) {
+        final session = sessions[index];
         // Match the day card and the session detail screen: live engine
         // verdict for the day, falling back to the stored snapshot only when
         // the engine has not yet reached this day.
         final liveRating = appState
-            .liveDayRatingFor(s.meetingTime)
+            .liveDayRatingFor(session.meetingTime)
             ?.conditions;
-        final style = conditionStyle(liveRating ?? s.conditionRating);
-        final confirmed = !s.isCancelled && s.status == SessionStatus.confirmed;
+        final style = conditionStyle(liveRating ?? session.conditionRating);
+        final confirmed =
+            !session.isCancelled && session.status == SessionStatus.confirmed;
         return Card(
           child: ListTile(
             leading: Container(
@@ -88,17 +89,17 @@ class UpcomingSessionsScreen extends StatelessWidget {
               ),
             ),
             title: Text(
-              formatDayTime(s.meetingTime),
+              formatDayTime(session.meetingTime),
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
-            subtitle: Text(_statusLine(s)),
+            subtitle: Text(_statusLine(session)),
             trailing: Icon(
-              s.isCancelled
+              session.isCancelled
                   ? Icons.block
                   : confirmed
                   ? Icons.check_circle
                   : Icons.chevron_right,
-              color: s.isCancelled
+              color: session.isCancelled
                   ? Colors.grey
                   : confirmed
                   ? const Color(0xFF2E7D32)
@@ -106,7 +107,7 @@ class UpcomingSessionsScreen extends StatelessWidget {
             ),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => SessionDetailScreen(sessionId: s.id),
+                builder: (_) => SessionDetailScreen(sessionId: session.id),
               ),
             ),
           ),

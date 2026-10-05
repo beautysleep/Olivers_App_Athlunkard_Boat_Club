@@ -1,7 +1,6 @@
-/// Pure live-water-release logic: the app-facing model and the mapping from a
-/// stored `water_release_status/current` Firestore document to it. No
-/// Firestore/Flutter dependency, so it is unit-testable directly (mirrors
-/// weather_conditions.dart).
+/// No Firestore/Flutter dependency, so it is unit-testable directly — mirrors
+/// weather_conditions.dart. The source document lives at
+/// `water_release_status/current`.
 library;
 
 /// The three classifications the backend fetcher can produce (see
@@ -13,7 +12,6 @@ const String kNoDischargeExpected = 'no_discharge_expected';
 const String kDischargeExpected = 'discharge_expected';
 const String kUnparsed = 'unparsed';
 
-/// Live water-release status, read from `water_release_status/current`.
 class LiveWaterRelease {
   const LiveWaterRelease({
     required this.classification,
@@ -23,7 +21,6 @@ class LiveWaterRelease {
     this.sourceUrl,
   });
 
-  // kNoDischargeExpected | kDischargeExpected | kUnparsed
   final String classification;
   final String statementRaw;
 
@@ -67,8 +64,8 @@ class LiveWaterRelease {
       value == value.roundToDouble() ? '${value.round()}' : '$value';
 }
 
-/// Builds [LiveWaterRelease] from the Firestore document, or null when
-/// there's no usable classification (so the UI falls back to mock).
+/// Null when the document carries no usable classification — the card then
+/// shows "No data" rather than a colour it would have to invent.
 LiveWaterRelease? liveWaterReleaseFromDocument(Map<String, dynamic>? doc) {
   if (doc == null) return null;
   final forecast = (doc['parteen_forecast'] as Map?)?.cast<String, dynamic>();
