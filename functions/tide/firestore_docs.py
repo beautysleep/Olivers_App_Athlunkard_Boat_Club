@@ -35,7 +35,6 @@ def build_day_document(
     time_offset_minutes: int,
     high_height_offset_m: float,
 ) -> dict:
-    """Build the Firestore document for one day (see the agreed schema)."""
     return {
         "date": date_str,
         "station": station,

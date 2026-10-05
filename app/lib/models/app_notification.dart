@@ -1,7 +1,3 @@
-/// Push is not wired up yet, so notifications live here and surface in an
-/// in-app inbox instead.
-library;
-
 enum NotificationType {
   proposalReceived,
   sessionConfirmed,

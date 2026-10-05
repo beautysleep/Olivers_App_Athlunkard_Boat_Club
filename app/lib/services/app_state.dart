@@ -325,15 +325,13 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
-  /// Coach marks themselves unavailable for [day], so it won't be proposed.
   void markCoachUnavailable(DayConditions day) {
     if (_currentUser?.role != UserRole.coach) return;
     _repository.markCoachUnavailable(day.date);
     notifyListeners();
   }
 
-  /// Coach cancels a session — either pivoting to land training or outright.
-  /// Everyone who committed is notified.
+  /// Everyone who committed is notified of a cancel or pivot.
   Future<bool> cancelSession(
     Session session, {
     required bool pivotToLand,
@@ -374,8 +372,6 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
-  // --- Athlete actions -----------------------------------------------------
-  /// Athlete accepts or declines a proposed session.
   Future<bool> respondToProposal(
     Session session, {
     required bool accept,
@@ -399,7 +395,6 @@ class AppState extends ChangeNotifier {
     await loadSessions();
     final updated = sessionById(session.id);
 
-    // Notify the athlete's parent, if one is subscribed to them.
     if (accept && !alreadyIn) {
       for (final account in _roster) {
         if (account.role == UserRole.parent && account.childId == athlete.id) {
@@ -415,7 +410,6 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    // If this response tipped it over the threshold, tell everyone going.
     final nowConfirmed = updated?.status == SessionStatus.confirmed;
     if (!wasConfirmed && nowConfirmed == true && updated != null) {
       for (final a in updated.committedAthletes) {
@@ -441,7 +435,6 @@ class AppState extends ChangeNotifier {
     return true;
   }
 
-  // --- Helpers -------------------------------------------------------------
   void _notify(
     String recipientId,
     NotificationType type,

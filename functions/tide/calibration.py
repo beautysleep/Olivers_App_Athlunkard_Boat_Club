@@ -12,7 +12,6 @@ from datetime import datetime, timedelta, timezone
 
 from models import TideExtreme
 
-# --- Calibration parameters (tunable) ------------------------------------
 # Limerick Dock high tide occurs ~1h07m AFTER Tarbert (tide propagates
 # up-estuary). Applied to every extreme as a first approximation for the lag.
 DEFAULT_TIME_OFFSET = timedelta(hours=1, minutes=7)
@@ -49,7 +48,6 @@ def apply_limerick_calibration(
     high_height_offset_m: float = DEFAULT_HIGH_HEIGHT_OFFSET_M,
     low_height_offset_m: float = DEFAULT_LOW_HEIGHT_OFFSET_M,
 ) -> list[TideExtreme]:
-    """Shift Tarbert extremes to Limerick Dock using the calibration offsets."""
     calibrated: list[TideExtreme] = []
     for e in extremes:
         height_offset = (
